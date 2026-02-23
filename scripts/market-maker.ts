@@ -91,6 +91,23 @@ const orders = pgTable("orders", {
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+const mmOrderStats = pgTable("mm_order_stats", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id).notNull(),
+    pair: text("pair").notNull(),
+    side: text("side").notNull(),
+    cancelledCount: decimal("cancelled_count").default("0").notNull(),
+    cancelledQuantity: decimal("cancelled_quantity", { precision: 18, scale: 8 }).default("0").notNull(),
+    avgPrice: decimal("avg_price", { precision: 18, scale: 8 }),
+    minPrice: decimal("min_price", { precision: 18, scale: 8 }),
+    maxPrice: decimal("max_price", { precision: 18, scale: 8 }),
+    periodStart: timestamp("period_start").notNull(),
+    periodEnd: timestamp("period_end").notNull(),
+    deletedCount: decimal("deleted_count").default("0").notNull(),
+    retainedCount: decimal("retained_count").default("0").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ─── DB connection ───────────────────────────────────────────────────────────
 neonConfig.webSocketConstructor = ws;
 const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
@@ -468,6 +485,7 @@ function diffOrders(
 
 /**
  * Cancel a batch of orders in a single transaction, releasing locked funds.
+ * Then aggregate metadata into mm_order_stats and hard-delete unfilled cancelled orders.
  */
 async function cancelOrders(orderList: ExistingOrder[]): Promise<number> {
   if (orderList.length === 0) return 0;
@@ -490,16 +508,115 @@ async function cancelOrders(orderList: ExistingOrder[]): Promise<number> {
         await releaseCancelledFunds(tx, order, config);
       }
     }
+
+    // Aggregate cancelled orders into stats, then delete
+    await aggregateAndDeleteCancelled(tx, orderList);
   });
 
   return orderList.length;
 }
 
+/**
+ * Aggregate cancelled order metadata into mm_order_stats, then hard-delete
+ * orders that had zero fills. Orders with partial fills are retained (FK refs from trades).
+ */
+async function aggregateAndDeleteCancelled(tx: any, orderList: ExistingOrder[]) {
+  // Group by pair + side
+  const groups = new Map<string, ExistingOrder[]>();
+  for (const order of orderList) {
+    const key = `${order.pair}|${order.side}`;
+    const arr = groups.get(key) ?? [];
+    arr.push(order);
+    groups.set(key, arr);
+  }
+
+  const now = new Date();
+  const toDeleteIds: string[] = [];
+
+  for (const [key, grp] of groups) {
+    const [pair, side] = key.split("|");
+    const prices = grp.filter((o) => o.price).map((o) => parseFloat(o.price!));
+    const quantities = grp.map((o) => parseFloat(o.quantity));
+
+    const unfilled = grp.filter((o) => parseFloat(o.filledQuantity) === 0);
+    const retained = grp.filter((o) => parseFloat(o.filledQuantity) > 0);
+
+    // Compute time range
+    // Note: ExistingOrder doesn't have createdAt, so use "now" as period boundary
+    const totalQty = quantities.reduce((a, b) => a + b, 0);
+    const avgPrice = prices.length > 0
+      ? (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(8)
+      : null;
+    const minPrice = prices.length > 0 ? Math.min(...prices).toFixed(8) : null;
+    const maxPrice = prices.length > 0 ? Math.max(...prices).toFixed(8) : null;
+
+    await tx.insert(mmOrderStats).values({
+      userId: grp[0].userId,
+      pair,
+      side,
+      cancelledCount: grp.length.toString(),
+      cancelledQuantity: totalQty.toFixed(8),
+      avgPrice,
+      minPrice,
+      maxPrice,
+      periodStart: now,
+      periodEnd: now,
+      deletedCount: unfilled.length.toString(),
+      retainedCount: retained.length.toString(),
+    });
+
+    // Collect unfilled order IDs for hard deletion
+    for (const o of unfilled) {
+      toDeleteIds.push(o.id);
+    }
+  }
+
+  // Hard-delete unfilled cancelled orders (no FK references in trades)
+  if (toDeleteIds.length > 0) {
+    await tx.delete(orders).where(
+      sql`${orders.id} IN (${sql.join(toDeleteIds.map(id => sql`${id}::uuid`), sql`, `)})`
+    );
+  }
+}
+
 // ─── Tick: incremental rebalance ─────────────────────────────────────────────
 
+let tickCount = 0;
+const BULK_CLEANUP_EVERY = 360; // every ~30 min at 5s intervals
+
+/**
+ * Periodic bulk cleanup: delete old cancelled MM orders that predate
+ * the inline cleanup (e.g. from before this feature was added).
+ * Only deletes orders with zero fills to respect trade FK references.
+ */
+async function bulkCleanupCancelledOrders(userId: string) {
+    const result = await db.execute(sql`
+      WITH to_delete AS (
+        SELECT id FROM ${orders}
+        WHERE ${orders.userId} = ${userId}::uuid
+          AND ${orders.status} = 'cancelled'
+          AND ${orders.filledQuantity} = '0'
+        LIMIT 5000
+      )
+      DELETE FROM ${orders}
+      WHERE id IN (SELECT id FROM to_delete)
+      RETURNING id
+    `);
+    const deleted = result.rows?.length ?? 0;
+    if (deleted > 0) {
+        console.log(`  🧹 Bulk cleanup: deleted ${deleted} stale cancelled orders`);
+    }
+}
+
 async function tick(userId: string) {
+    tickCount++;
     const ts = new Date().toISOString().slice(11, 19);
     process.stdout.write(`[${ts}] `);
+
+    // Periodic bulk cleanup of old cancelled orders
+    if (tickCount % BULK_CLEANUP_EVERY === 0) {
+        await bulkCleanupCancelledOrders(userId);
+    }
 
     // 1. Fetch prices in parallel
     const [xau, xag, usdc] = await Promise.all([
@@ -589,7 +706,32 @@ async function main() {
     console.log(`   Threshold: XAU ${(REPRICE_THRESHOLD["XAU-PERP"] * 100).toFixed(2)}% | XAG ${(REPRICE_THRESHOLD["XAG-PERP"] * 100).toFixed(2)}% | USDT ${(REPRICE_THRESHOLD["USDT-USDC"] * 100).toFixed(3)}%\n`);
 
     const user = await ensureSystemUser();
-    console.log(`   User ID:   ${user.id}\n`);
+    console.log(`   User ID:   ${user.id}`);
+
+    // One-time cleanup of legacy cancelled orders from before inline deletion
+    console.log(`   Startup:   cleaning up legacy cancelled orders...`);
+    let totalCleaned = 0;
+    let batchCleaned: number;
+    do {
+        const result = await db.execute(sql`
+          WITH to_delete AS (
+            SELECT id FROM ${orders}
+            WHERE ${orders.userId} = ${user.id}::uuid
+              AND ${orders.status} = 'cancelled'
+              AND ${orders.filledQuantity} = '0'
+            LIMIT 10000
+          )
+          DELETE FROM ${orders}
+          WHERE id IN (SELECT id FROM to_delete)
+          RETURNING id
+        `);
+        batchCleaned = result.rows?.length ?? 0;
+        totalCleaned += batchCleaned;
+        if (batchCleaned > 0) {
+            process.stdout.write(`   ...deleted ${totalCleaned} so far\n`);
+        }
+    } while (batchCleaned > 0);
+    console.log(`   Startup:   purged ${totalCleaned} legacy cancelled orders\n`);
 
     // Initial tick
     await tick(user.id);

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, decimal, unique, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, decimal, integer, unique, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -96,6 +96,33 @@ export const trades = pgTable(
     index("trades_pair_created").on(table.pair, table.createdAt),
     index("trades_maker_user").on(table.makerUserId),
     index("trades_taker_user").on(table.takerUserId),
+  ]
+);
+
+export const mmOrderStats = pgTable(
+  "mm_order_stats",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id)
+      .notNull(),
+    pair: text("pair").notNull(),
+    side: text("side").notNull(), // "buy" | "sell"
+    cancelledCount: integer("cancelled_count").default(0).notNull(),
+    cancelledQuantity: decimal("cancelled_quantity", { precision: 18, scale: 8 })
+      .default("0")
+      .notNull(),
+    avgPrice: decimal("avg_price", { precision: 18, scale: 8 }),
+    minPrice: decimal("min_price", { precision: 18, scale: 8 }),
+    maxPrice: decimal("max_price", { precision: 18, scale: 8 }),
+    periodStart: timestamp("period_start").notNull(),
+    periodEnd: timestamp("period_end").notNull(),
+    deletedCount: integer("deleted_count").default(0).notNull(), // orders hard-deleted
+    retainedCount: integer("retained_count").default(0).notNull(), // orders kept (had fills)
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("mm_order_stats_user_pair").on(table.userId, table.pair),
   ]
 );
 

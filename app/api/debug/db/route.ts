@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { orders } from "@/lib/db/schema";
+import { orders, users } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +38,27 @@ export async function GET() {
       .orderBy(sql`${orders.price} ASC`)
       .limit(1);
 
+    // ── Who owns the open orders? ────────────────────────────────────────
+    const orderOwners = await db.execute(sql`
+      SELECT u.email,
+             count(*)::int AS open_orders,
+             min(o.created_at) AS oldest_order,
+             max(o.created_at) AS newest_order
+      FROM ${orders} o
+      JOIN ${users} u ON u.id = o.user_id
+      WHERE o.status IN ('open', 'partial')
+      GROUP BY u.email
+      ORDER BY open_orders DESC
+    `);
+
+    // Check if any system market-maker users exist
+    const mmUsers = await db.execute(sql`
+      SELECT email, created_at
+      FROM ${users}
+      WHERE email LIKE 'system_mm_%@openmandi.com'
+      ORDER BY created_at
+    `);
+
     return NextResponse.json(
       {
         dbHost,
@@ -47,6 +68,8 @@ export async function GET() {
           topBid: topBid?.price ?? null,
           topAsk: topAsk?.price ?? null,
         },
+        orderOwners: orderOwners.rows,
+        marketMakerUsers: mmUsers.rows,
         timestamp: new Date().toISOString(),
         envKeys: Object.keys(process.env)
           .filter((k) => k.includes("POSTGRES") || k.includes("DATABASE") || k.includes("PG"))

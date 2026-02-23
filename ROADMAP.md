@@ -12,6 +12,7 @@ An academic cryptocurrency-based commodities exchange for trading gold and silve
 | 3 — Trading Engine | Done | 47 | 3 order books, matching, futures, margin, liquidation |
 | 4 — Transparency + Liquidity | Done | 47 | Transparency dashboard, one-click LP, zero maker fees |
 | 5 — System Market Maker | Done | 47 | Automated baseline liquidity bot + Binance hedging |
+| 6 — Production Infra + DB Hygiene | Done | 47 | Separate prod/dev DBs, MM order cleanup, drizzle prod config |
 
 ## Completed Sprints
 
@@ -54,8 +55,11 @@ An academic cryptocurrency-based commodities exchange for trading gold and silve
 
 ### Infrastructure
 - Vercel deployment with Vercel Postgres (Neon serverless)
+- Separate Neon databases for dev and production
 - `@neondatabase/serverless` driver with WebSocket connections
-- 6 database tables with indexes for query performance
+- 7 database tables with indexes for query performance
+- Drizzle config for dev (`drizzle.config.ts`) and prod (`drizzle.config.prod.ts`)
+- `db:push` / `db:push:prod` scripts for schema management
 
 ## Backlog / Future Sprints
 
@@ -70,7 +74,20 @@ An academic cryptocurrency-based commodities exchange for trading gold and silve
 - [x] HMAC-SHA256 authenticated hedging with Testnet support
 - [x] Multi-instance tagging system for portable deployment
 
-### Sprint 6+: Potential Features
+### Sprint 6: Production Infra + DB Hygiene (Done)
+
+**Problem**: Dev and production shared the same Neon database, and the market maker accumulated ~200K cancelled order rows that bloated the database.
+
+**Solution**: Separate databases + automatic order cleanup
+- [x] Separate Neon databases for dev and production environments
+- [x] Production Drizzle config (`drizzle.config.prod.ts`) with `db:push:prod` / `db:studio:prod` scripts
+- [x] New `mm_order_stats` table to retain aggregated metadata from deleted MM orders
+- [x] Inline cleanup: cancelled MM orders with zero fills are hard-deleted after each rebalance cycle
+- [x] Periodic bulk cleanup: every ~30 min, purge up to 5K stale cancelled orders
+- [x] Startup cleanup: on bot restart, batch-delete all legacy cancelled orders
+- [x] Debug endpoint enhanced with order ownership and MM user diagnostics
+
+### Sprint 7+: Potential Features
 - [ ] Real-time WebSocket price updates
 - [ ] Trade notifications (email or in-app)
 - [ ] Leaderboard / PnL rankings

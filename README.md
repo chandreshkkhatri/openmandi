@@ -59,8 +59,8 @@ lib/
 ├── auth/session.ts       # Server-side session verification
 ├── db/
 │   ├── index.ts          # Lazy DB connection (Neon Pool)
-│   ├── schema.ts         # 6 Drizzle tables (users, wallets, transactions,
-│   │                     #   orders, trades, positions)
+│   ├── schema.ts         # 7 Drizzle tables (users, wallets, transactions,
+│   │                     #   orders, trades, positions, mm_order_stats)
 │   └── queries/          # wallet.ts, trading.ts, transparency.ts
 ├── firebase/             # client.ts (lazy init), admin.ts (lazy init)
 ├── services/             # matching.ts, margin.ts, prices.ts, funding.ts
