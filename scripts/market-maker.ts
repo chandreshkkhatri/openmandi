@@ -10,11 +10,11 @@
  *   npx tsx scripts/market-maker.ts --tag=aws-1    # custom tag for multi-instance
  *
  * Env:
- *   POSTGRES_URL  — Neon / Postgres connection string (required)
+ *   OPENMANDI_DATABASE_URL or POSTGRES_URL  — Neon / Postgres connection string (required)
  */
 
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env.local", override: true });
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
@@ -35,8 +35,9 @@ import type { PairKey, FuturesPair } from "../lib/trading/constants";
 import { sql } from "drizzle-orm";
 
 // ─── Env check ───────────────────────────────────────────────────────────────
-if (!process.env.POSTGRES_URL) {
-    console.error("❌  POSTGRES_URL is not set. Add it to .env or .env.local");
+const DATABASE_URL = process.env.OPENMANDI_DATABASE_URL || process.env.POSTGRES_URL;
+if (!DATABASE_URL) {
+    console.error("❌  OPENMANDI_DATABASE_URL or POSTGRES_URL is not set. Add it to .env or .env.local");
     process.exit(1);
 }
 
@@ -110,7 +111,7 @@ const mmOrderStats = pgTable("mm_order_stats", {
 
 // ─── DB connection ───────────────────────────────────────────────────────────
 neonConfig.webSocketConstructor = ws;
-const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
+const pool = new Pool({ connectionString: DATABASE_URL });
 const db = drizzle({ client: pool });
 
 // ─── Configuration ───────────────────────────────────────────────────────────
@@ -698,8 +699,10 @@ async function tick(userId: string) {
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 async function main() {
+    const dbHost = DATABASE_URL.match(/@([^/]+)\//)?.[1] ?? "unknown";
     console.log(`\n🤖 Open Mandi Market Maker (incremental rebalance)`);
     console.log(`   Tag:       ${TAG}`);
+    console.log(`   DB Host:   ${dbHost}`);
     console.log(`   User:      ${SYSTEM_EMAIL}`);
     console.log(`   Levels:    ${LEVELS.length} per side × 3 pairs = ${LEVELS.length * 2 * 3} target orders`);
     console.log(`   Interval:  ${REFRESH_INTERVAL_MS / 1000}s`);
