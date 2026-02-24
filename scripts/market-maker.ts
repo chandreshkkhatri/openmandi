@@ -35,11 +35,10 @@ import type { PairKey, FuturesPair } from "../lib/trading/constants";
 import { sql } from "drizzle-orm";
 
 // ─── Env check ───────────────────────────────────────────────────────────────
-const DATABASE_URL = process.env.OPENMANDI_DATABASE_URL || process.env.POSTGRES_URL;
-if (!DATABASE_URL) {
+const DATABASE_URL: string = process.env.OPENMANDI_DATABASE_URL || process.env.POSTGRES_URL || (() => {
     console.error("❌  OPENMANDI_DATABASE_URL or POSTGRES_URL is not set. Add it to .env or .env.local");
     process.exit(1);
-}
+})();
 
 // ─── CLI args ────────────────────────────────────────────────────────────────
 const TAG =
