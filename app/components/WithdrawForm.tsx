@@ -6,26 +6,26 @@ import { useRouter } from "next/navigation";
 const WITHDRAWAL_FEE = 0.1;
 
 export default function WithdrawForm({
-  usdtAvailable,
   usdcAvailable,
 }: {
-  usdtAvailable: number;
   usdcAvailable: number;
 }) {
   const router = useRouter();
-  const [currency, setCurrency] = useState<"USDT" | "USDC">("USDT");
+  const currency = "USDC" as const;
   const [amount, setAmount] = useState("");
+  const [destinationAddress, setDestinationAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const maxAmount = currency === "USDT" ? usdtAvailable : usdcAvailable;
+  const maxAmount = usdcAvailable;
   const maxWithdrawable = Math.max(0, maxAmount - WITHDRAWAL_FEE);
   const parsedAmount = parseFloat(amount);
   const isValid =
     !isNaN(parsedAmount) &&
     parsedAmount > 0 &&
-    parsedAmount + WITHDRAWAL_FEE <= maxAmount;
+    parsedAmount + WITHDRAWAL_FEE <= maxAmount &&
+    /^0x[a-fA-F0-9]{40}$/.test(destinationAddress.trim());
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,16 +37,21 @@ export default function WithdrawForm({
       const res = await fetch("/api/wallet/withdraw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currency, amount }),
+        body: JSON.stringify({
+          currency,
+          amount,
+          destinationAddress: destinationAddress.trim(),
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Withdrawal failed");
 
       setSuccess(
-        `Successfully withdrew $${parsedAmount.toFixed(2)} ${currency} (fee: $${WITHDRAWAL_FEE.toFixed(2)})`
+        `Withdrawal request submitted for $${parsedAmount.toFixed(2)} ${currency}. Processing starts after review.`
       );
       setAmount("");
+      setDestinationAddress("");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Withdrawal failed");
@@ -66,24 +71,8 @@ export default function WithdrawForm({
           <label className="mb-1.5 block text-sm text-zinc-400">
             Currency
           </label>
-          <div className="flex gap-2">
-            {(["USDT", "USDC"] as const).map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => {
-                  setCurrency(c);
-                  setAmount("");
-                }}
-                className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                  currency === c
-                    ? "border-gold bg-gold/10 text-gold"
-                    : "border-border text-zinc-400 hover:text-white"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+          <div className="rounded-lg border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-medium text-gold">
+            USDC
           </div>
         </div>
 
@@ -108,6 +97,19 @@ export default function WithdrawForm({
           >
             Max
           </button>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm text-zinc-400">
+            Destination Address (ETH)
+          </label>
+          <input
+            type="text"
+            value={destinationAddress}
+            onChange={(e) => setDestinationAddress(e.target.value)}
+            placeholder="0x..."
+            className="w-full rounded-lg border border-border bg-black px-4 py-2.5 font-mono text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-gold/50"
+          />
         </div>
 
         {isValid && (
@@ -156,7 +158,7 @@ export default function WithdrawForm({
       </form>
 
       <p className="mt-4 text-xs text-zinc-500">
-        A $0.10 flat fee applies to each withdrawal.
+        A $0.10 flat fee applies. Requests are queued for on-chain payout.
       </p>
     </div>
   );

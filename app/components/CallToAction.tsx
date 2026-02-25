@@ -14,8 +14,8 @@ export default function CallToAction() {
           Ready to Trade?
         </h2>
         <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-zinc-400">
-          Sign up and start trading gold and silver futures with USDT and USDC.
-          Zero maker fees, up to 50x leverage, and full transparency.
+          Sign up and start trading gold and silver futures with USDC collateral.
+          Zero maker fees and up to 50x leverage.
         </p>
         <a
           href="/signup"

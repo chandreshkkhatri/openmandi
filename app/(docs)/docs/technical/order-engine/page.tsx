@@ -14,9 +14,9 @@ export default function OrderEngine() {
 
       <h2>Engine Overview</h2>
       <p>
-        The matching engine operates on three order books: USDT/USDC, XAU
-        (gold futures), and XAG (silver futures). Each order book is independent
-        and maintains its own bid and ask queues.
+        The matching engine operates on two order books: XAU (gold futures)
+        and XAG (silver futures). Each order book is independent and maintains
+        its own bid and ask queues.
       </p>
       <p>
         The engine is synchronous within a single order book &mdash; orders are

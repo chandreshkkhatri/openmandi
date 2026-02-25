@@ -9,13 +9,13 @@ const steps = [
     number: "02",
     title: "Fund Your Account",
     description:
-      "Deposit USDT or USDC to your trading wallet. Quick, simple, and ready to trade in minutes.",
+      "Deposit USDC to your trading wallet. Quick, simple, and ready to trade in minutes.",
   },
   {
     number: "03",
     title: "Choose Your Market",
     description:
-      "Trade USDT/USDC spot, or go long and short on gold and silver perpetual futures with up to 50x leverage.",
+      "Go long and short on gold and silver perpetual futures with up to 50x leverage.",
   },
   {
     number: "04",

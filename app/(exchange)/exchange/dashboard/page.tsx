@@ -30,11 +30,8 @@ export default async function Dashboard() {
   const user = await getSession();
   if (!user) return null;
 
-  const { usdt, usdc } = await getUserWallets(user.id);
-  const totalBalance = getTotalBalance(
-    usdt?.balance ?? null,
-    usdc?.balance ?? null
-  );
+  const { usdc } = await getUserWallets(user.id);
+  const totalBalance = getTotalBalance(usdc?.balance ?? null);
   const recentTxns = await getRecentTransactions(user.id, 5);
   const [openPositions, openOrders, prices] = await Promise.all([
     getUserPositions(user.id, "open"),
@@ -57,7 +54,7 @@ export default async function Dashboard() {
     );
   }
 
-  const canDeposit = totalBalance < 1;
+  const canDeposit = totalBalance < 5;
   const canWithdraw = totalBalance >= 10;
 
   return (
@@ -79,20 +76,8 @@ export default async function Dashboard() {
       </div>
 
       {/* Wallet Balances */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-surface p-6">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
-            USDT
-          </h2>
-          <p className="font-mono text-2xl text-white">
-            ${parseFloat(usdt?.balance ?? "0").toFixed(2)}
-          </p>
-          <p className="mt-1 text-xs text-zinc-500">
-            Available: $
-            {parseFloat(usdt?.availableBalance ?? "0").toFixed(2)}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-surface p-6">
+      <div className="mb-8 grid gap-4 sm:grid-cols-1">
+        <div className="rounded-2xl border border-border bg-surface p-6 max-w-sm">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-silver">
             USDC
           </h2>
@@ -145,7 +130,7 @@ export default async function Dashboard() {
         >
           <p className="text-sm font-semibold text-gold">Deposit</p>
           <p className="mt-1 text-xs text-zinc-500">
-            {canDeposit ? "Add funds to your account" : "Balance must be < $1"}
+            {canDeposit ? "Add funds to your account" : "Balance must be < $5"}
           </p>
         </Link>
         <Link

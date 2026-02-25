@@ -14,7 +14,7 @@ export default function MarketOverviewCard({
   price,
   href,
 }: MarketOverviewCardProps) {
-  const priceDecimals = pair === "USDT-USDC" ? 4 : pair === "XAG-PERP" ? 3 : 2;
+  const priceDecimals = pair === "XAG-PERP" ? 3 : 2;
   const formattedPrice = parseFloat(price).toFixed(priceDecimals);
   const accentColor = getAccentColor(pair);
 

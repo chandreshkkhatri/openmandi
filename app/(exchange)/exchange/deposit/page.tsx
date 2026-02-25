@@ -6,11 +6,8 @@ export default async function Deposit() {
   const user = await getSession();
   if (!user) return null;
 
-  const { usdt, usdc } = await getUserWallets(user.id);
-  const totalBalance = getTotalBalance(
-    usdt?.balance ?? null,
-    usdc?.balance ?? null
-  );
+  const { usdc } = await getUserWallets(user.id);
+  const totalBalance = getTotalBalance(usdc?.balance ?? null);
 
   const eligible = totalBalance < 5;
 
@@ -18,7 +15,7 @@ export default async function Deposit() {
     <div className="mx-auto max-w-lg">
       <h1 className="mb-2 text-2xl font-bold text-white">Deposit</h1>
       <p className="mb-8 text-zinc-400">
-        Add USDT or USDC to your trading account.
+        Request your deposit address, send funds on-chain, then submit the transaction hash for verification.
       </p>
 
       {/* Balance Summary */}
@@ -27,12 +24,6 @@ export default async function Deposit() {
           Current Balances
         </h2>
         <dl className="space-y-2">
-          <div className="flex justify-between">
-            <dt className="text-sm text-zinc-400">USDT</dt>
-            <dd className="font-mono text-sm text-white">
-              ${parseFloat(usdt?.balance ?? "0").toFixed(2)}
-            </dd>
-          </div>
           <div className="flex justify-between">
             <dt className="text-sm text-zinc-400">USDC</dt>
             <dd className="font-mono text-sm text-white">

@@ -10,7 +10,6 @@ interface TradingFormTabsProps {
   pairType: "spot" | "futures";
   minQuantity: string;
   tickSize: string;
-  usdtAvailable: number;
   usdcAvailable: number;
   currentPrice: string;
   contractSize?: string;

@@ -1,13 +1,4 @@
 export const PAIRS = {
-  "USDT-USDC": {
-    base: "USDT",
-    quote: "USDC",
-    type: "spot" as const,
-    makerFeeRate: "0", // 0% — incentivize liquidity provision
-    takerFeeRate: "0.0003", // 0.03%
-    tickSize: "0.0001",
-    minQuantity: "0.001",
-  },
   "XAU-PERP": {
     base: "XAU",
     quote: "USD",
@@ -37,7 +28,6 @@ export const PAIRS = {
 } as const;
 
 export type PairKey = keyof typeof PAIRS;
-export type SpotPair = "USDT-USDC";
 export type FuturesPair = "XAU-PERP" | "XAG-PERP";
 
 export const FUNDING_INTERVAL_HOURS = 8;
@@ -59,10 +49,11 @@ export type AccentColor = "gold" | "silver";
 export function getAccentColor(pair: string): AccentColor {
   if (pair.includes("XAU")) return "gold";
   if (pair.includes("XAG")) return "silver";
-  return "gold"; // default for USDT-USDC or unknown
+  return "gold";
 }
 
 // Get accent color based on currency
-export function getCurrencyColor(currency: "USDT" | "USDC"): AccentColor {
-  return currency === "USDT" ? "gold" : "silver";
+export function getCurrencyColor(currency: "USDC"): AccentColor {
+  if (currency === "USDC") return "silver";
+  return "silver";
 }

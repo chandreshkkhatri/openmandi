@@ -21,11 +21,7 @@ export default function TermsAndConditions() {
       </p>
       <ol type="a">
         <li>
-          Deposit and withdraw USDT (Tether) and USDC (USD Coin) stablecoins;
-        </li>
-        <li>
-          Exchange USDT and USDC at market-determined rates via an on-platform
-          order book;
+          Deposit and withdraw USDC (USD Coin) stablecoin;
         </li>
         <li>
           Trade perpetual futures contracts referencing the spot prices of gold
@@ -92,8 +88,8 @@ export default function TermsAndConditions() {
       <h2>5. Deposit Terms</h2>
       <ol type="a">
         <li>
-          The Platform accepts deposits exclusively in USDT (Tether) and USDC
-          (USD Coin). No other cryptocurrency or fiat currency is accepted.
+          The Platform accepts deposits exclusively in USDC (USD Coin). No
+          other cryptocurrency or fiat currency is accepted.
         </li>
         <li>
           Each individual deposit transaction shall not exceed five United States
@@ -101,8 +97,8 @@ export default function TermsAndConditions() {
         </li>
         <li>
           Deposits may only be made when the User&apos;s aggregate account
-          balance (across all currencies held on the Platform) is strictly less
-          than one United States Dollar ($1.00) in value.
+          balance is strictly less than five United States Dollars ($5.00) in
+          value.
         </li>
         <li>
           The Platform does not charge fees for deposits. However, blockchain
@@ -138,17 +134,11 @@ export default function TermsAndConditions() {
         </li>
       </ol>
 
-      <h2>7. Stablecoin Exchange Terms</h2>
+      <h2>7. Futures Market Execution Terms</h2>
       <ol type="a">
         <li>
-          The exchange rate between USDT and USDC on the Platform is determined
-          solely by market forces through the Platform&apos;s order book. The
-          rate is <strong>not</strong> guaranteed to be 1:1 and may deviate from
-          external market rates.
-        </li>
-        <li>
-          The Platform does not act as a counterparty to stablecoin exchange
-          transactions. All trades are executed between Platform users.
+          Futures market prices are determined by market participants through
+          the Platform&apos;s order books.
         </li>
         <li>
           The Platform does not guarantee the availability of liquidity. Orders

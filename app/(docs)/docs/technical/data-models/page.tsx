@@ -39,7 +39,7 @@ Position 1──* Trade`}</code>
 
       <h2>Wallet</h2>
       <p>
-        Each user has two wallets: one for USDT and one for USDC. The{" "}
+        Each user has a USDC wallet. The{" "}
         <code>balance</code> is the total funds, while{" "}
         <code>availableBalance</code> excludes funds locked as margin or in
         pending orders.
@@ -48,7 +48,7 @@ Position 1──* Trade`}</code>
         <code>{`Wallet {
   id:               UUID        (primary key)
   userId:           UUID        (foreign key → User)
-  currency:         enum        ("USDT" | "USDC")
+  currency:         enum        ("USDC")
   balance:          decimal     (total balance)
   availableBalance: decimal     (balance - locked funds)
   updatedAt:        timestamp
@@ -60,14 +60,13 @@ Position 1──* Trade`}</code>
 
       <h2>Order</h2>
       <p>
-        Represents a buy or sell order on any of the three order books
-        (USDT/USDC, XAU, XAG).
+        Represents a buy or sell order on futures order books (XAU, XAG).
       </p>
       <pre>
         <code>{`Order {
   id:             UUID        (primary key)
   userId:         UUID        (foreign key → User)
-  pair:           enum        ("USDT-USDC" | "XAU-USD" | "XAG-USD")
+  pair:           enum        ("XAU-PERP" | "XAG-PERP")
   side:           enum        ("buy" | "sell")
   type:           enum        ("limit" | "market")
   price:          decimal?    (null for market orders)
@@ -90,7 +89,7 @@ Position 1──* Trade`}</code>
       <pre>
         <code>{`Trade {
   id:             UUID        (primary key)
-  pair:           enum        ("USDT-USDC" | "XAU-USD" | "XAG-USD")
+        pair:           enum        ("XAU-PERP" | "XAG-PERP")
   makerOrderId:   UUID        (foreign key → Order)
   takerOrderId:   UUID        (foreign key → Order)
   makerUserId:    UUID        (foreign key → User)
@@ -116,7 +115,7 @@ Position 1──* Trade`}</code>
   entryPrice:       decimal     (average entry price)
   quantity:         decimal     (number of contracts)
   margin:           decimal     (collateral locked)
-  collateralCurrency: enum      ("USDT" | "USDC")
+  collateralCurrency: enum      ("USDC")
   liquidationPrice: decimal     (calculated)
   realizedPnl:      decimal     (from partial closes)
   status:           enum        ("open" | "closed" | "liquidated")
@@ -141,7 +140,7 @@ Position 1──* Trade`}</code>
   type:           enum        ("deposit" | "withdrawal" | "trade_debit" |
                                "trade_credit" | "fee" | "margin_lock" |
                                "margin_release" | "liquidation" | "funding")
-  currency:       enum        ("USDT" | "USDC")
+  currency:       enum        ("USDC")
   amount:         decimal     (signed: positive for credits, negative for debits)
   balanceAfter:   decimal     (wallet balance after this transaction)
   referenceId:    UUID?       (links to Order, Trade, or Position)

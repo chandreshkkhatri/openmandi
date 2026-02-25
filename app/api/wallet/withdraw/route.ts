@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { wallets, transactions } from "@/lib/db/schema";
+import { wallets, withdrawalRequests } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { checkWithdrawalPolicy } from "@/lib/services/reserve-policy";
 
 const WITHDRAWAL_FEE = 0.1;
+const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 const withdrawSchema = z.object({
-  currency: z.enum(["USDT", "USDC"]),
+  currency: z.literal("USDC"),
+  destinationAddress: z
+    .string()
+    .regex(ETH_ADDRESS_REGEX, "Destination address must be a valid ETH address"),
   amount: z.string().refine((val) => {
     const num = parseFloat(val);
     return !isNaN(num) && num > 0;
@@ -26,8 +31,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { currency, amount } = withdrawSchema.parse(body);
+    const { currency, amount, destinationAddress } = withdrawSchema.parse(body);
     const withdrawAmount = parseFloat(amount);
+
+    // Reserve-policy gate (pause, threshold, hourly cap, hot-wallet floor)
+    const policy = await checkWithdrawalPolicy(withdrawAmount);
+    if (!policy.allowed) {
+      return NextResponse.json(
+        { success: false, error: policy.reason },
+        { status: 403 }
+      );
+    }
 
     const result = await db.transaction(async (tx) => {
       // Lock wallet rows for this user to prevent concurrent balance updates
@@ -37,18 +51,15 @@ export async function POST(request: NextRequest) {
         .where(eq(wallets.userId, user.id))
         .for("update");
 
-      const usdtWallet = userWallets.find((w) => w.currency === "USDT");
       const usdcWallet = userWallets.find((w) => w.currency === "USDC");
-      const targetWallet = currency === "USDT" ? usdtWallet : usdcWallet;
+      const targetWallet = usdcWallet;
 
       if (!targetWallet) {
         throw new Error("Wallet not found");
       }
 
       // Eligibility: total balance >= $10
-      const totalBalance =
-        parseFloat(usdtWallet?.balance ?? "0") +
-        parseFloat(usdcWallet?.balance ?? "0");
+      const totalBalance = parseFloat(usdcWallet?.balance ?? "0");
 
       if (totalBalance < 10) {
         throw new Error(
@@ -68,69 +79,49 @@ export async function POST(request: NextRequest) {
 
       // Atomic balance update using SQL arithmetic on DECIMAL columns
       const totalDebitStr = totalDebit.toFixed(8);
-      const [updated] = await tx
+      await tx
         .update(wallets)
         .set({
-          balance: sql`${wallets.balance} - ${totalDebitStr}::decimal`,
           availableBalance: sql`${wallets.availableBalance} - ${totalDebitStr}::decimal`,
           updatedAt: new Date(),
         })
-        .where(eq(wallets.id, targetWallet.id))
-        .returning({ balance: wallets.balance });
+        .where(eq(wallets.id, targetWallet.id));
 
-      // Compute intermediate balance for the withdrawal ledger entry
-      // (balance after withdrawal amount, before fee)
-      const balanceAfterWithdrawal = (
-        parseFloat(updated.balance) + WITHDRAWAL_FEE
-      ).toFixed(8);
-
-      // Record withdrawal transaction
-      const [withdrawalTx] = await tx
-        .insert(transactions)
+      const [requestRecord] = await tx
+        .insert(withdrawalRequests)
         .values({
           userId: user.id,
           walletId: targetWallet.id,
-          type: "withdrawal",
           currency,
-          amount: (-withdrawAmount).toFixed(8),
-          balanceAfter: balanceAfterWithdrawal,
-          description: `Withdrawal ${withdrawAmount.toFixed(2)} ${currency}`,
+          network: "ETH",
+          destinationAddress: destinationAddress.toLowerCase(),
+          amount: withdrawAmount.toFixed(8),
+          fee: WITHDRAWAL_FEE.toFixed(8),
+          totalDebit: totalDebit.toFixed(8),
+          status: "pending",
         })
         .returning();
 
-      // Record fee transaction (balanceAfter = final wallet balance)
-      await tx.insert(transactions).values({
-        userId: user.id,
-        walletId: targetWallet.id,
-        type: "withdrawal_fee",
-        currency,
-        amount: (-WITHDRAWAL_FEE).toFixed(8),
-        balanceAfter: updated.balance,
-        referenceId: withdrawalTx.id,
-        referenceType: "withdrawal",
-        description: "Withdrawal fee",
-      });
-
       return {
-        ...withdrawalTx,
+        ...requestRecord,
         fee: WITHDRAWAL_FEE.toFixed(2),
         netAmount: withdrawAmount.toFixed(2),
       };
     });
 
-    // Simulated blockchain processing delay (dev only)
-    if (process.env.NODE_ENV !== "production") {
-      await new Promise((r) => setTimeout(r, 2000));
-    }
-
-    return NextResponse.json({ success: true, transaction: result });
+    return NextResponse.json({ success: true, request: result });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Withdrawal failed";
+      error instanceof Error ? error.message : "Withdrawal request failed";
     const isValidation =
       message.includes("Withdrawals require") ||
       message.includes("Insufficient") ||
-      message.includes("Wallet not found");
+      message.includes("Wallet not found") ||
+      message.includes("Destination address") ||
+      message.includes("paused") ||
+      message.includes("manual review") ||
+      message.includes("payout limit") ||
+      message.includes("reserve constraints");
     return NextResponse.json(
       { success: false, error: message },
       { status: isValidation ? 400 : 500 }

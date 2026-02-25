@@ -27,19 +27,9 @@ const topics = [
     description: "How to fund your account and withdraw your earnings.",
   },
   {
-    href: "/docs/stablecoin-exchange",
-    title: "Stablecoin Exchange",
-    description: "Exchange between USDT and USDC at market-driven rates.",
-  },
-  {
     href: "/docs/fees",
     title: "Fee Structure",
     description: "A clear breakdown of all fees on the platform.",
-  },
-  {
-    href: "/docs/transparency",
-    title: "Transparency Dashboard",
-    description: "How we keep everything open and verifiable.",
   },
 ];
 
@@ -71,22 +61,6 @@ export default function DocsHub() {
             <p className="text-sm text-zinc-400">{topic.description}</p>
           </Link>
         ))}
-      </div>
-
-      <div className="mt-12 rounded-xl border border-border bg-surface p-6">
-        <h2 className="mb-2 text-lg font-semibold text-white">
-          Looking for technical details?
-        </h2>
-        <p className="mb-4 text-sm text-zinc-400">
-          Our technical documentation covers the system architecture, matching
-          engine, API reference, and more.
-        </p>
-        <Link
-          href="/docs/technical"
-          className="text-sm font-semibold text-gold hover:text-gold-light"
-        >
-          View Technical Documentation &rarr;
-        </Link>
       </div>
     </div>
   );

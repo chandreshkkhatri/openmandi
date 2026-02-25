@@ -8,7 +8,7 @@ export default function FuturesSpecs() {
 
       <p className="lead">
         Open Mandi offers perpetual futures contracts for gold (XAU) and
-        silver (XAG), collateralized with USDT or USDC. This document details
+        silver (XAG), collateralized with USDC. This document details
         the contract parameters, margin model, and liquidation mechanics.
       </p>
 
@@ -43,7 +43,7 @@ export default function FuturesSpecs() {
           </tr>
           <tr>
             <td>Collateral</td>
-            <td>USDT or USDC</td>
+            <td>USDC</td>
           </tr>
           <tr>
             <td>Maximum Leverage</td>
@@ -99,7 +99,7 @@ export default function FuturesSpecs() {
           </tr>
           <tr>
             <td>Collateral</td>
-            <td>USDT or USDC</td>
+            <td>USDC</td>
           </tr>
           <tr>
             <td>Maximum Leverage</td>

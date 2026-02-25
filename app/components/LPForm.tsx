@@ -10,7 +10,6 @@ interface LPFormProps {
   pairType: "spot" | "futures";
   tickSize: string;
   minQuantity: string;
-  usdtAvailable: number;
   usdcAvailable: number;
   currentPrice: string;
   contractSize?: string;
@@ -38,7 +37,6 @@ export default function LPForm({
   pairType,
   tickSize,
   minQuantity,
-  usdtAvailable,
   usdcAvailable,
   currentPrice,
   contractSize,
@@ -49,7 +47,7 @@ export default function LPForm({
   const [spread, setSpread] = useState(0.005);
   const [levels, setLevels] = useState(3);
   const [leverage, setLeverage] = useState(10);
-  const [collateral, setCollateral] = useState<"USDT" | "USDC">("USDT");
+  const collateral = "USDC" as const;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -83,7 +81,7 @@ export default function LPForm({
       const sellAmt = parseFloat(sellAmount);
       const buyAmt = parseFloat(buyAmount);
 
-      // Sell side: selling USDT at prices above center
+      // Sell side: selling base asset at prices above center
       if (!isNaN(sellAmt) && sellAmt >= minQty) {
         let remainingSell = sellAmt;
         for (let i = 1; i <= safeLevels; i++) {
@@ -105,7 +103,7 @@ export default function LPForm({
         }
       }
 
-      // Buy side: buying USDT with USDC at prices below center
+      // Buy side: buying base asset with quote currency at prices below center
       if (!isNaN(buyAmt) && buyAmt > 0) {
         let remainingBuy = buyAmt;
         for (let i = 1; i <= safeLevels; i++) {
@@ -182,11 +180,10 @@ export default function LPForm({
   const hasBuyOrders = buyOrders.length > 0;
   const hasSellOrders = sellOrders.length > 0;
   const canSubmitSpot =
-    (!hasSellOrders || totalCostSell <= usdtAvailable) &&
+    (!hasSellOrders || totalCostSell <= usdcAvailable) &&
     (!hasBuyOrders || totalCostBuy <= usdcAvailable);
 
-  const collateralAvailable =
-    collateral === "USDC" ? usdcAvailable : usdtAvailable;
+  const collateralAvailable = usdcAvailable;
   const totalFuturesCost = totalCostBuy + totalCostSell;
 
   const canSubmit =
@@ -285,7 +282,7 @@ export default function LPForm({
           <>
             <div>
               <label className="mb-1.5 block text-sm text-zinc-400">
-                USDT to sell (above center)
+                Amount to sell (above center)
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -298,7 +295,7 @@ export default function LPForm({
                   className={`w-full rounded-lg border border-border bg-black px-4 py-2.5 font-mono text-white placeholder-zinc-600 outline-none transition-colors focus:border-accent-${accentColor}/50`}
                 />
                 <span className="text-xs text-zinc-500">
-                  avail: ${usdtAvailable.toFixed(2)}
+                  avail: ${usdcAvailable.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -328,24 +325,8 @@ export default function LPForm({
               <label className="mb-1.5 block text-sm text-zinc-400">
                 Collateral
               </label>
-              <div className="flex gap-2">
-                {(["USDT", "USDC"] as const).map((c) => {
-                  const currencyColor = getCurrencyColor(c);
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCollateral(c)}
-                      className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                        collateral === c
-                          ? `border-accent-${currencyColor} bg-accent-${currencyColor}/10 text-accent-${currencyColor}`
-                          : "border-border text-zinc-400 hover:text-white"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  );
-                })}
+              <div className={`rounded-lg border border-accent-${getCurrencyColor("USDC")}/30 bg-accent-${getCurrencyColor("USDC")}/10 px-4 py-2 text-sm font-medium text-accent-${getCurrencyColor("USDC")}`}>
+                USDC
               </div>
             </div>
             <div>
@@ -363,11 +344,7 @@ export default function LPForm({
                   className={`w-full rounded-lg border border-border bg-black px-4 py-2.5 font-mono text-white placeholder-zinc-600 outline-none transition-colors focus:border-accent-${accentColor}/50`}
                 />
                 <span className="text-xs text-zinc-500">
-                  avail: $
-                  {(collateral === "USDT"
-                    ? usdtAvailable
-                    : usdcAvailable
-                  ).toFixed(2)}
+                  avail: ${usdcAvailable.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -485,7 +462,7 @@ export default function LPForm({
                     </span>
                     <span className="text-zinc-500">
                       {pairType === "spot"
-                        ? `$${o.cost.toFixed(2)} USDT`
+                        ? `$${o.cost.toFixed(2)} USDC`
                         : `$${o.cost.toFixed(4)} margin`}
                     </span>
                   </div>
@@ -497,7 +474,7 @@ export default function LPForm({
               {pairType === "spot" ? (
                 <div className="flex justify-between text-zinc-400">
                   <span>
-                    Total: ${totalCostSell.toFixed(2)} USDT + $
+                    Total: ${totalCostSell.toFixed(2)} USDC + $
                     {totalCostBuy.toFixed(2)} USDC
                   </span>
                 </div>

@@ -8,11 +8,12 @@ An academic cryptocurrency-based commodities exchange for trading gold and silve
 |--------|--------|--------|-----------------|
 | 0 — Documentation + Placeholders | Done | 31 | Next.js scaffold, 5 route groups, 17 doc pages, dark theme |
 | 1 — Auth & User Accounts | Done | 38 | Firebase Auth, sessions, users/wallets tables |
-| 2 — Wallet, Deposits & Withdrawals | Done | 40 | USDT/USDC deposits, withdrawals, transactions |
-| 3 — Trading Engine | Done | 47 | 3 order books, matching, futures, margin, liquidation |
+| 2 — Wallet, Deposits & Withdrawals | Done | 40 | USDC deposits, withdrawals, transactions |
+| 3 — Trading Engine | Done | 47 | Futures order books, matching, margin, liquidation |
 | 4 — Transparency + Liquidity | Done | 47 | Transparency dashboard, one-click LP, zero maker fees |
 | 5 — System Market Maker | Done | 47 | Automated baseline liquidity bot + Binance hedging |
 | 6 — Production Infra + DB Hygiene | Done | 47 | Separate prod/dev DBs, MM order cleanup, drizzle prod config |
+| 7 — Real On-Chain Wallet Management + Product Simplification | Done | 50 | User wallets + exchange internal wallets, on-chain settlement, reconciliation, monitoring, minimal product surface |
 
 ## Completed Sprints
 
@@ -31,13 +32,13 @@ An academic cryptocurrency-based commodities exchange for trading gold and silve
 - Build-safe lazy initialization for Firebase/DB
 
 ### Sprint 2: Wallet, Deposits & Withdrawals
-- Deposit flow: USDT/USDC, max $20 per deposit, only when balance < $5
+- Deposit flow: USDC, max $20 per deposit, only when balance < $5
 - Withdrawal flow: only when balance >= $10, $0.10 flat fee
 - Transactions table with signed amounts and balance snapshots
 - Server+client hybrid pattern for forms
 
 ### Sprint 3: Trading Engine
-- 3 order books: USDT-USDC (spot), XAU-PERP (gold futures), XAG-PERP (silver futures)
+- 2 order books: XAU-PERP (gold futures), XAG-PERP (silver futures)
 - Synchronous order matching with price-time priority and partial fills
 - Perpetual futures: up to 50x leverage, 2% initial margin, 1% maintenance margin
 - Mark price: 70% index (metals.dev API) + 30% order book mid
@@ -87,7 +88,40 @@ An academic cryptocurrency-based commodities exchange for trading gold and silve
 - [x] Startup cleanup: on bot restart, batch-delete all legacy cancelled orders
 - [x] Debug endpoint enhanced with order ownership and MM user diagnostics
 
-### Sprint 7+: Potential Features
+### Sprint 7: Real On-Chain Wallet Management (Done)
+
+**Problem**: Wallet behavior was simulation-first and did not fully cover exchange-side internal wallet operations (hot wallet, treasury, reserve accounting, and reconciliation controls).
+
+**Solution**: End-to-end wallet management for both user balances and internal exchange wallets
+- [x] Deposit API switched to return token/network/address instructions (no instant credit)
+- [x] Deposit claim endpoint added for tx-hash submissions
+- [x] `deposit_claims` table added for pending/confirmed/rejected lifecycle
+- [x] Vercel cron endpoint added to verify on-chain transfers and credit wallets after confirmations
+- [x] Deposit UI updated for instruction + claim workflow
+- [x] `withdrawal_requests` table added and withdrawal API changed to request/hold model
+- [x] Wallet page updated to show deposit claim and withdrawal request statuses
+- [x] Complete withdrawal settlement cron to broadcast payouts and finalize ledger debits
+- [x] Add admin monitoring for failed/rejected deposit and withdrawal requests
+- [x] Simplify active product surface to futures + wallet core flow only
+- [x] Remove Transparency section from exchange/docs navigation
+- [x] Remove Technical/Developer docs section from active docs navigation
+- [x] Retire `/exchange/transparency`, `/docs/transparency`, and `/docs/technical/*` from active scope via redirects
+- [x] Add explicit internal wallet registry (hot wallet, treasury, fee wallet, reserve wallet)
+- [x] Add reserve policy checks (minimum operational float + max payout per interval)
+- [x] Add automated treasury rebalancing workflow between internal wallets
+- [x] Add periodic reconciliation report: on-chain balances vs internal ledger balances
+- [x] Add segregation for user-liability funds vs fee/revenue funds in reporting
+- [x] Add emergency controls (withdrawal pause, per-asset pause, manual review queue)
+
+### Product Backlog (Deferred Modules)
+
+These modules are intentionally removed from the current MVP surface and can be reintroduced in future releases.
+
+- [ ] Reintroduce public transparency dashboard with operational metrics
+- [ ] Reintroduce transparency documentation section
+- [ ] Reintroduce technical/developer documentation portal
+
+### Sprint 8+: Potential Features
 - [ ] Real-time WebSocket price updates
 - [ ] Trade notifications (email or in-app)
 - [ ] Leaderboard / PnL rankings

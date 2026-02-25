@@ -3,7 +3,7 @@
  * Open Mandi — Binance Hedger
  *
  * Monitors fills against the market-maker system user and
- * automatically hedges exposure on Binance USDT-M Futures.
+ * automatically hedges exposure on Binance Futures.
  *
  * Usage:
  *   npx tsx scripts/hedger.ts
@@ -102,13 +102,14 @@ const orders = pgTable("orders", {
 // Our exchange contract → Binance symbol + conversion factor
 // Each contract on our exchange = contractSize oz of metal
 // Binance trades in oz directly for XAUUSDT / XAGUSDT
+const BINANCE_QUOTE_ASSET = "USDT";
 const PAIR_MAP: Record<
     string,
     {
         binanceSymbol: string;
         contractSize: number; // oz per contract
         quantityPrecision: number; // decimal places for Binance qty
-        minNotional: number; // minimum USDT value per order
+        minNotional: number; // minimum quote-asset value per order
     }
 > = {
     "XAU-PERP": {
@@ -176,31 +177,17 @@ async function checkBinanceBalance(): Promise<void> {
         asset: string;
         availableBalance: string;
     }>;
-    const usdt = result.find((a) => a.asset === "USDT");
+    const quoteAssetBalance = result.find((a) => a.asset === BINANCE_QUOTE_ASSET);
     console.log(
-        `Binance USDT balance: ${usdt ? usdt.availableBalance : "NOT FOUND"}`
+        `Binance quote-asset balance (${BINANCE_QUOTE_ASSET}): ${quoteAssetBalance ? quoteAssetBalance.availableBalance : "NOT FOUND"}`
     );
 }
 
 // ─── Main loop ───────────────────────────────────────────────────────────────
 
-const SYSTEM_EMAIL = `system_mm_${TAG}@openmandi.com`;
 const POLL_INTERVAL = 3000; // 3 seconds
 let lastProcessedTradeTime: Date | null = null;
 let processedTradeIds = new Set<string>();
-
-async function findSystemUser(): Promise<string | null> {
-    // Find any system_mm user (matches all tags)
-    const systemUsers = await db
-        .select()
-        .from(users)
-        .where(like(users.email, "system_mm_%@openmandi.com"));
-
-    if (systemUsers.length === 0) return null;
-
-    // Return all user IDs for matching
-    return systemUsers.map((u) => u.id).join(",");
-}
 
 async function pollAndHedge(systemUserIds: string[]) {
     // Find new trades where a system user is the maker (counterparty to real users)
@@ -246,7 +233,7 @@ async function pollAndHedge(systemUserIds: string[]) {
 
     for (const trade of newTrades) {
         const pairConfig = PAIR_MAP[trade.pair];
-        if (!pairConfig) continue; // Skip USDT-USDC or unknown pairs
+        if (!pairConfig) continue;
 
         // Find the maker's order to determine the MM's side on this trade
         const [makerOrder] = await db

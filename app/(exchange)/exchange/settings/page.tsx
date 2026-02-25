@@ -13,7 +13,6 @@ export default async function Settings() {
     .from(wallets)
     .where(eq(wallets.userId, user.id));
 
-  const usdtWallet = userWallets.find((w) => w.currency === "USDT");
   const usdcWallet = userWallets.find((w) => w.currency === "USDC");
 
   return (
@@ -59,12 +58,6 @@ export default async function Settings() {
             Wallets
           </h2>
           <dl className="space-y-3">
-            <div className="flex justify-between">
-              <dt className="text-sm text-zinc-400">USDT Balance</dt>
-              <dd className="font-mono text-sm text-white">
-                ${usdtWallet?.balance ?? "0.00"}
-              </dd>
-            </div>
             <div className="flex justify-between">
               <dt className="text-sm text-zinc-400">USDC Balance</dt>
               <dd className="font-mono text-sm text-white">

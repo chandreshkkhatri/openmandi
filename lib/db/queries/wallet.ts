@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { wallets, transactions } from "@/lib/db/schema";
+import { wallets, transactions, depositClaims, withdrawalRequests } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function getUserWallets(userId: string) {
@@ -9,16 +9,12 @@ export async function getUserWallets(userId: string) {
     .where(eq(wallets.userId, userId));
 
   return {
-    usdt: userWallets.find((w) => w.currency === "USDT") ?? null,
     usdc: userWallets.find((w) => w.currency === "USDC") ?? null,
   };
 }
 
-export function getTotalBalance(
-  usdtBalance: string | null,
-  usdcBalance: string | null
-): number {
-  return parseFloat(usdtBalance ?? "0") + parseFloat(usdcBalance ?? "0");
+export function getTotalBalance(usdcBalance: string | null): number {
+  return parseFloat(usdcBalance ?? "0");
 }
 
 export async function getRecentTransactions(
@@ -30,5 +26,23 @@ export async function getRecentTransactions(
     .from(transactions)
     .where(eq(transactions.userId, userId))
     .orderBy(desc(transactions.createdAt))
+    .limit(limit);
+}
+
+export async function getRecentDepositClaims(userId: string, limit: number = 10) {
+  return db
+    .select()
+    .from(depositClaims)
+    .where(eq(depositClaims.userId, userId))
+    .orderBy(desc(depositClaims.createdAt))
+    .limit(limit);
+}
+
+export async function getRecentWithdrawalRequests(userId: string, limit: number = 10) {
+  return db
+    .select()
+    .from(withdrawalRequests)
+    .where(eq(withdrawalRequests.userId, userId))
+    .orderBy(desc(withdrawalRequests.createdAt))
     .limit(limit);
 }

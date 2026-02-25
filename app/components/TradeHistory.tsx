@@ -8,7 +8,7 @@ interface TradeHistoryProps {
 }
 
 export default function TradeHistory({ trades, pair, accentColor = "gold" }: TradeHistoryProps) {
-  const priceDecimals = pair === "USDT-USDC" ? 4 : pair === "XAG-PERP" ? 3 : 2;
+  const priceDecimals = pair === "XAG-PERP" ? 3 : 2;
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-4">

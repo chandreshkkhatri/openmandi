@@ -77,11 +77,7 @@ export async function POST(request: NextRequest) {
 
         user = newUser;
 
-        // Create USDT and USDC wallets
-        await db.insert(wallets).values([
-          { userId: user.id, currency: "USDT" },
-          { userId: user.id, currency: "USDC" },
-        ]);
+        await db.insert(wallets).values({ userId: user.id, currency: "USDC" });
       }
     }
 

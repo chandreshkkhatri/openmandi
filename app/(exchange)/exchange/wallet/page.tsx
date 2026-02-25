@@ -3,6 +3,8 @@ import {
   getUserWallets,
   getTotalBalance,
   getRecentTransactions,
+  getRecentDepositClaims,
+  getRecentWithdrawalRequests,
 } from "@/lib/db/queries/wallet";
 import Link from "next/link";
 
@@ -25,35 +27,23 @@ export default async function Wallet() {
   const user = await getSession();
   if (!user) return null;
 
-  const { usdt, usdc } = await getUserWallets(user.id);
-  const totalBalance = getTotalBalance(
-    usdt?.balance ?? null,
-    usdc?.balance ?? null
-  );
-  const recentTxns = await getRecentTransactions(user.id, 20);
+  const { usdc } = await getUserWallets(user.id);
+  const totalBalance = getTotalBalance(usdc?.balance ?? null);
+  const [recentTxns, recentClaims, recentWithdrawals] = await Promise.all([
+    getRecentTransactions(user.id, 20),
+    getRecentDepositClaims(user.id, 10),
+    getRecentWithdrawalRequests(user.id, 10),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl">
       <h1 className="mb-2 text-2xl font-bold text-white">Wallet</h1>
       <p className="mb-8 text-zinc-400">
-        Your USDT and USDC balances and transaction history.
+        Your USDC balance and transaction history.
       </p>
 
       {/* Balance Cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-surface p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
-            USDT
-          </h2>
-          <p className="font-mono text-2xl text-white">
-            ${parseFloat(usdt?.balance ?? "0").toFixed(2)}
-          </p>
-          <p className="mt-1 text-xs text-zinc-500">
-            Available: $
-            {parseFloat(usdt?.availableBalance ?? "0").toFixed(2)}
-          </p>
-        </div>
-
+      <div className="mb-8 grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-border bg-surface p-6">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-silver">
             USDC
@@ -88,6 +78,50 @@ export default async function Wallet() {
               Withdraw
             </Link>
           </div>
+        </div>
+      </div>
+
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+            Deposit Claims
+          </h2>
+          {recentClaims.length === 0 ? (
+            <p className="text-sm text-zinc-500">No deposit claims yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {recentClaims.map((claim) => (
+                <div key={claim.id} className="rounded-lg border border-border px-3 py-2 text-xs">
+                  <p className="font-mono text-zinc-300">{claim.txHash.slice(0, 12)}...{claim.txHash.slice(-8)}</p>
+                  <p className="text-zinc-500">
+                    {claim.currency} • {claim.status} • {claim.confirmations} conf
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+            Withdrawal Requests
+          </h2>
+          {recentWithdrawals.length === 0 ? (
+            <p className="text-sm text-zinc-500">No withdrawal requests yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {recentWithdrawals.map((request) => (
+                <div key={request.id} className="rounded-lg border border-border px-3 py-2 text-xs">
+                  <p className="font-mono text-zinc-300">
+                    {parseFloat(request.amount).toFixed(2)} {request.currency}
+                  </p>
+                  <p className="text-zinc-500">
+                    {request.status} • {request.destinationAddress.slice(0, 10)}...{request.destinationAddress.slice(-6)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

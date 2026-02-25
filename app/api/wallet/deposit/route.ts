@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
-import { db } from "@/lib/db";
-import { wallets, transactions } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 const depositSchema = z.object({
-  currency: z.enum(["USDT", "USDC"]),
-  amount: z.string().refine((val) => {
-    const num = parseFloat(val);
-    return !isNaN(num) && num > 0 && num <= 20;
-  }, "Amount must be between $0.01 and $20.00"),
+  currency: z.literal("USDC"),
 });
+
+const CURRENCY_CONFIG = {
+  USDC: {
+    network: "ETH",
+    contractAddress:
+      process.env.ETH_USDC_CONTRACT ?? "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    depositAddress: process.env.EXCHANGE_DEPOSIT_ADDRESS_USDC,
+  },
+} as const;
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,79 +26,37 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { currency, amount } = depositSchema.parse(body);
-    const depositAmount = parseFloat(amount);
+    const { currency } = depositSchema.parse(body);
+    const config = CURRENCY_CONFIG[currency];
 
-    const result = await db.transaction(async (tx) => {
-      // Lock wallet rows for this user to prevent concurrent balance updates
-      const userWallets = await tx
-        .select()
-        .from(wallets)
-        .where(eq(wallets.userId, user.id))
-        .for("update");
-
-      const usdtWallet = userWallets.find((w) => w.currency === "USDT");
-      const usdcWallet = userWallets.find((w) => w.currency === "USDC");
-      const targetWallet = currency === "USDT" ? usdtWallet : usdcWallet;
-
-      if (!targetWallet) {
-        throw new Error("Wallet not found");
-      }
-
-      // Eligibility: total balance < $5
-      const totalBalance =
-        parseFloat(usdtWallet?.balance ?? "0") +
-        parseFloat(usdcWallet?.balance ?? "0");
-
-      if (totalBalance >= 5) {
-        throw new Error(
-          `Deposits are only allowed when your total balance is below $5.00. Your current total balance is $${totalBalance.toFixed(2)}.`
-        );
-      }
-
-      // Atomic balance update using SQL arithmetic on DECIMAL columns
-      const [updated] = await tx
-        .update(wallets)
-        .set({
-          balance: sql`${wallets.balance} + ${depositAmount.toFixed(8)}::decimal`,
-          availableBalance: sql`${wallets.availableBalance} + ${depositAmount.toFixed(8)}::decimal`,
-          updatedAt: new Date(),
-        })
-        .where(eq(wallets.id, targetWallet.id))
-        .returning({ balance: wallets.balance });
-
-      // Record transaction
-      const [txRecord] = await tx
-        .insert(transactions)
-        .values({
-          userId: user.id,
-          walletId: targetWallet.id,
-          type: "deposit",
-          currency,
-          amount: depositAmount.toFixed(8),
-          balanceAfter: updated.balance,
-          description: `Deposit ${depositAmount.toFixed(2)} ${currency}`,
-        })
-        .returning();
-
-      return txRecord;
-    });
-
-    // Simulated blockchain confirmation delay (dev only)
-    if (process.env.NODE_ENV !== "production") {
-      await new Promise((r) => setTimeout(r, 2000));
+    if (!config.depositAddress) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            `Deposit address is not configured for ${currency}. Set EXCHANGE_DEPOSIT_ADDRESS_${currency}.`,
+        },
+        { status: 503 }
+      );
     }
 
-    return NextResponse.json({ success: true, transaction: result });
+    return NextResponse.json({
+      success: true,
+      deposit: {
+        currency,
+        network: config.network,
+        tokenContract: config.contractAddress,
+        address: config.depositAddress,
+        minConfirmations: Number(process.env.DEPOSIT_MIN_CONFIRMATIONS ?? "3"),
+        note:
+          "Send only this token on this network. Funds are credited after on-chain confirmation and claim verification.",
+      },
+    });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Deposit failed";
-    const isValidation =
-      message.includes("Deposits are only allowed") ||
-      message.includes("Wallet not found");
+    const message = error instanceof Error ? error.message : "Deposit setup failed";
     return NextResponse.json(
       { success: false, error: message },
-      { status: isValidation ? 400 : 500 }
+      { status: 400 }
     );
   }
 }

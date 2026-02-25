@@ -6,10 +6,10 @@ const features = [
       "Crypto-native settlement eliminates traditional T+2 delays. Your futures contracts settle in minutes, not days.",
   },
   {
-    icon: "\u26D3\uFE0F",
-    title: "Full Transparency",
+    icon: "🪙",
+    title: "USDC-Native Collateral",
     description:
-      "Public dashboard with live exchange stats — trading volume, fee revenue, order book depth, and recent trades. Nothing hidden.",
+      "Trade gold and silver perpetual futures with USDC as the single collateral and settlement asset.",
   },
   {
     icon: "\uD83D\uDEE1\uFE0F",

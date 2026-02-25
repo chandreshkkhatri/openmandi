@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getIndexPrices, getMarkPrice, getOrderBookMidPrice } from "@/lib/services/prices";
+import { getIndexPrices, getMarkPrice } from "@/lib/services/prices";
 
 export const dynamic = "force-dynamic";
 
@@ -10,15 +10,10 @@ export async function GET() {
       getMarkPrice("XAU-PERP"),
       getMarkPrice("XAG-PERP"),
     ]);
-    const usdtUsdcMid = await getOrderBookMidPrice("USDT-USDC");
-
     return NextResponse.json({
       success: true,
       gold: xauMark,
       silver: xagMark,
-      usdtUsdc: {
-        midPrice: usdtUsdcMid ?? "1.00000000",
-      },
       fetchedAt: indexPrices.timestamp,
     }, {
       headers: {

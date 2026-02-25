@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function Fees() {
   return (
     <article className="prose prose-invert max-w-none prose-headings:text-white prose-a:text-gold hover:prose-a:text-gold-light">
@@ -18,10 +16,7 @@ export default function Fees() {
       <h2>Our Fee Philosophy</h2>
       <p>
         Fees on Open Mandi serve two purposes: they sustain the platform and
-        they teach you how fees work on real exchanges. Every fee collected is
-        visible on the{" "}
-        <Link href="/docs/transparency">Transparency Dashboard</Link>, so you
-        can see exactly how much revenue the exchange generates.
+        they teach you how fees work on real exchanges.
       </p>
 
       <h2>Trading Fees (Futures)</h2>
@@ -68,36 +63,6 @@ export default function Fees() {
         market healthier for everyone.
       </p>
 
-      <h2>Exchange Fees (USDT/USDC)</h2>
-      <p>
-        The same maker/taker model applies to the stablecoin exchange:
-      </p>
-      <table>
-        <thead>
-          <tr>
-            <th>Fee Type</th>
-            <th>Rate</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Maker Fee</td>
-            <td>0.01%</td>
-            <td>Limit orders that add liquidity to the USDT/USDC book</td>
-          </tr>
-          <tr>
-            <td>Taker Fee</td>
-            <td>0.03%</td>
-            <td>Orders that immediately match on the USDT/USDC book</td>
-          </tr>
-        </tbody>
-      </table>
-      <p>
-        Exchange fees are slightly lower than futures trading fees because
-        stablecoin swaps are simpler transactions.
-      </p>
-
       <h2>Deposit Fees</h2>
       <p>
         <strong>No fees</strong>. Deposits are free on Open Mandi. You may pay
@@ -117,10 +82,6 @@ export default function Fees() {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>USDT</td>
-            <td>$0.10</td>
-          </tr>
           <tr>
             <td>USDC</td>
             <td>$0.10</td>
@@ -149,16 +110,6 @@ export default function Fees() {
             <td>Of trade value</td>
           </tr>
           <tr>
-            <td>Stablecoin Exchange (Maker)</td>
-            <td>0.01%</td>
-            <td>Of trade value</td>
-          </tr>
-          <tr>
-            <td>Stablecoin Exchange (Taker)</td>
-            <td>0.03%</td>
-            <td>Of trade value</td>
-          </tr>
-          <tr>
             <td>Deposit</td>
             <td>Free</td>
             <td>Network fees may apply</td>
@@ -173,11 +124,9 @@ export default function Fees() {
 
       <h2>Where Do Fees Go?</h2>
       <p>
-        Every fee collected by Open Mandi is tracked and displayed on the{" "}
-        <Link href="/exchange/transparency">Transparency Dashboard</Link>. You
-        can see total fees collected, broken down by type, in real time. As an
-        academic platform, this transparency is central to our mission of
-        teaching how exchanges operate.
+        Every fee collected by Open Mandi is tracked internally as part of
+        exchange operations and treasury accounting. In the current MVP scope,
+        fee details are presented through core wallet and trading interfaces.
       </p>
     </article>
   );

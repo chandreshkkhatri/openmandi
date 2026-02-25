@@ -3,7 +3,7 @@ import { getOrderBook } from "@/lib/db/queries/trading";
 
 export const dynamic = "force-dynamic";
 
-const VALID_PAIRS = ["USDT-USDC", "XAU-PERP", "XAG-PERP"];
+const VALID_PAIRS = ["XAU-PERP", "XAG-PERP"];
 
 export async function GET(
   request: NextRequest,
@@ -39,7 +39,10 @@ export async function GET(
         success: false, 
         error: "Failed to fetch order book", 
         details: error instanceof Error ? error.message : String(error),
-        cause: error instanceof Error ? (error as any).cause : undefined,
+        cause:
+          error instanceof Error && "cause" in error
+            ? (error as { cause?: unknown }).cause
+            : undefined,
       },
       { status: 500 }
     );

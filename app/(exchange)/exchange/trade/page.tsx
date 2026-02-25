@@ -1,9 +1,8 @@
-import { getIndexPrices, getOrderBookMidPrice } from "@/lib/services/prices";
+import { getIndexPrices } from "@/lib/services/prices";
 import MarketOverviewCard from "@/app/components/MarketOverviewCard";
 
 export default async function TradingHub() {
   const prices = await getIndexPrices();
-  const usdtUsdcMid = await getOrderBookMidPrice("USDT-USDC");
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -12,13 +11,7 @@ export default async function TradingHub() {
         Choose a market to view order books and place trades.
       </p>
 
-      <div className="grid gap-6 sm:grid-cols-3">
-        <MarketOverviewCard
-          name="Stablecoin Exchange"
-          pair="USDT-USDC"
-          price={usdtUsdcMid ?? "1.0000"}
-          href="/exchange/exchange"
-        />
+      <div className="grid gap-6 sm:grid-cols-2">
         <MarketOverviewCard
           name="Gold Futures"
           pair="XAU-PERP"
@@ -38,12 +31,6 @@ export default async function TradingHub() {
           Market Information
         </h2>
         <dl className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <dt className="text-sm text-zinc-500">USDT/USDC Fees</dt>
-            <dd className="text-sm text-zinc-300">
-              Maker 0.01% / Taker 0.03%
-            </dd>
-          </div>
           <div>
             <dt className="text-sm text-zinc-500">Futures Fees</dt>
             <dd className="text-sm text-zinc-300">

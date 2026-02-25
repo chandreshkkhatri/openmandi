@@ -72,15 +72,12 @@ export async function matchOrder(
     const fillQty = Math.min(remainingQty, restingRemaining);
     const executePrice = restingPrice;
 
-    // Calculate fees
-    const feeBase =
-      pairConfig.type === "spot"
-        ? fillQty * executePrice
-        : calculateNotional(
-            fillQty.toString(),
-            (pairConfig as typeof PAIRS["XAU-PERP"]).contractSize,
-            executePrice.toString()
-          );
+    // Calculate fees (all pairs are futures with contractSize)
+    const feeBase = calculateNotional(
+      fillQty.toString(),
+      pairConfig.contractSize,
+      executePrice.toString()
+    );
 
     const makerFee = feeBase * parseFloat(pairConfig.makerFeeRate);
     const takerFee = feeBase * parseFloat(pairConfig.takerFeeRate);
@@ -132,48 +129,6 @@ export async function matchOrder(
 }
 
 /**
- * Settle a spot trade (USDT-USDC exchange).
- * Transfers currencies between buyer and seller wallets.
- */
-export async function settleSpotTrade(
-  tx: Tx,
-  fill: Fill,
-  takerOrder: { id: string; userId: string; side: "buy" | "sell" }
-): Promise<void> {
-  const fillQty = fill.quantity;
-  const fillPrice = fill.price;
-  const quoteAmount = (parseFloat(fillQty) * parseFloat(fillPrice)).toFixed(8);
-
-  // Determine who gets what
-  // Buy side: buyer gets USDT, pays USDC
-  // Sell side: seller gets USDC, pays USDT
-  const buyerId =
-    takerOrder.side === "buy" ? takerOrder.userId : fill.makerUserId;
-  const sellerId =
-    takerOrder.side === "sell" ? takerOrder.userId : fill.makerUserId;
-  const buyerIsTaker = takerOrder.side === "buy";
-
-  const buyerFee = buyerIsTaker ? fill.takerFee : fill.makerFee;
-  const sellerFee = buyerIsTaker ? fill.makerFee : fill.takerFee;
-
-  // Buyer: deduct USDC (quote), credit USDT (base minus fee)
-  await updateWalletBalance(tx, buyerId, "USDC", `-${quoteAmount}`, "trade_debit", takerOrder.id);
-  const usdtCreditAfterFee = (parseFloat(fillQty) - parseFloat(buyerFee)).toFixed(8);
-  await updateWalletBalance(tx, buyerId, "USDT", usdtCreditAfterFee, "trade_credit", takerOrder.id);
-  if (parseFloat(buyerFee) > 0) {
-    await updateWalletBalance(tx, buyerId, "USDT", `-${buyerFee}`, "fee", takerOrder.id);
-  }
-
-  // Seller: deduct USDT (base), credit USDC (quote minus fee)
-  await updateWalletBalance(tx, sellerId, "USDT", `-${fillQty}`, "trade_debit", takerOrder.id);
-  const usdcCreditAfterFee = (parseFloat(quoteAmount) - parseFloat(sellerFee)).toFixed(8);
-  await updateWalletBalance(tx, sellerId, "USDC", usdcCreditAfterFee, "trade_credit", takerOrder.id);
-  if (parseFloat(sellerFee) > 0) {
-    await updateWalletBalance(tx, sellerId, "USDC", `-${sellerFee}`, "fee", takerOrder.id);
-  }
-}
-
-/**
  * Settle a futures trade: create/update positions and lock margin.
  */
 export async function settleFuturesTrade(
@@ -222,7 +177,7 @@ export async function settleFuturesTrade(
     .where(eq(orders.id, fill.makerOrderId));
 
   if (makerOrder) {
-    participants[1].collateralCurrency = makerOrder.collateralCurrency || "USDT";
+    participants[1].collateralCurrency = makerOrder.collateralCurrency || "USDC";
   }
 
   for (const p of participants) {

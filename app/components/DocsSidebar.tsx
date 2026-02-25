@@ -20,15 +20,12 @@ const sections = [
     title: "Using the Exchange",
     links: [
       { href: "/docs/deposits-withdrawals", label: "Deposits & Withdrawals" },
-      { href: "/docs/stablecoin-exchange", label: "Stablecoin Exchange" },
       { href: "/docs/fees", label: "Fee Structure" },
-      { href: "/docs/transparency", label: "Transparency Dashboard" },
     ],
   },
   {
     title: "More",
     links: [
-      { href: "/docs/technical", label: "Technical Documentation" },
       { href: "/terms", label: "Terms & Conditions" },
     ],
   },

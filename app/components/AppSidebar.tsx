@@ -14,7 +14,6 @@ const sections = [
       { href: "/exchange/wallet", label: "Balances" },
       { href: "/exchange/deposit", label: "Deposit" },
       { href: "/exchange/withdraw", label: "Withdraw" },
-      { href: "/exchange/exchange", label: "USDT/USDC Exchange" },
     ],
   },
   {
@@ -28,7 +27,6 @@ const sections = [
   {
     title: "Info",
     links: [
-      { href: "/exchange/transparency", label: "Transparency" },
       { href: "/exchange/settings", label: "Settings" },
     ],
   },

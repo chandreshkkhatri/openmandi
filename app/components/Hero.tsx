@@ -18,7 +18,7 @@ export default function Hero() {
 
         <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-zinc-400 md:text-xl">
           Open Mandi bridges cryptocurrency and precious metals markets.
-          Access gold and silver futures contracts with the speed, transparency,
+          Access gold and silver futures contracts with the speed, capital efficiency,
           and security of blockchain technology.
         </p>
 
@@ -38,7 +38,7 @@ export default function Hero() {
         </div>
 
         <div className="mt-12 flex items-center justify-center gap-6 text-xs font-medium uppercase tracking-wider text-zinc-500">
-          <span>Full Transparency</span>
+          <span>USDC-Native</span>
           <span className="text-gold/50">{"\u25C6"}</span>
           <span>24/7 Trading</span>
           <span className="text-gold/50">{"\u25C6"}</span>

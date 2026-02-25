@@ -100,8 +100,7 @@ export default function WhatIsCommodities() {
       <p>
         Open Mandi brings this traditional concept into the world of
         cryptocurrency. Instead of using traditional money through banks and
-        brokers, you use stablecoins (USDT and USDC) to trade gold and silver
-        futures contracts.
+        brokers, you use USDC to trade gold and silver futures contracts.
       </p>
       <p>
         The result is a commodities exchange that&apos;s faster, more

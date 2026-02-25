@@ -15,18 +15,14 @@ export default function DepositsWithdrawals() {
       </p>
 
       <h2>Accepted Currencies</h2>
-      <p>Open Mandi accepts two stablecoins for deposits:</p>
+      <p>Open Mandi accepts USDC for deposits:</p>
       <ul>
-        <li>
-          <strong>USDT</strong> (Tether)
-        </li>
         <li>
           <strong>USDC</strong> (USD Coin)
         </li>
       </ul>
       <p>
-        No other cryptocurrencies or fiat currencies are accepted. Both USDT and
-        USDC are stablecoins designed to maintain a 1:1 peg with the US dollar.
+        No other cryptocurrencies or fiat currencies are accepted.
       </p>
 
       <h2>Deposit Rules</h2>
@@ -38,11 +34,11 @@ export default function DepositsWithdrawals() {
         You cannot deposit more than this in a single transaction.
       </p>
 
-      <h3>2. Balance Must Be Below $1</h3>
+      <h3>2. Balance Must Be Below $5</h3>
       <p>
-        You can only make a deposit when your total account balance (across both
-        USDT and USDC) is <strong>less than $1</strong>. If your balance is $1 or
-        more, the deposit button will be disabled.
+        You can only make a deposit when your total account balance is
+        <strong> less than $5</strong>. If your balance is $5 or more, the
+        deposit button will be disabled.
       </p>
 
       <h3>Why These Limits?</h3>
@@ -87,20 +83,16 @@ export default function DepositsWithdrawals() {
       <p>Here&apos;s a typical flow:</p>
       <ol>
         <li>
-          You start with a $0 balance and deposit $5 in USDT
+          You start with a $0 balance and deposit $5 in USDC
         </li>
         <li>
-          You trade gold futures, exchange some USDT for USDC, and explore the
-          platform
+          You trade gold and silver futures and explore the platform
         </li>
         <li>
-          Your balance drops below $1 &mdash; you can deposit another $5
+          Your balance drops below $5 &mdash; you can deposit again
         </li>
         <li>
-          Through trading, your balance grows to $10 or more
-        </li>
-        <li>
-          Now you can withdraw some or all of your funds
+          When your balance reaches $10 or more, you can withdraw funds
         </li>
       </ol>
 
@@ -114,15 +106,13 @@ export default function DepositsWithdrawals() {
       <h2>Frequently Asked Questions</h2>
       <h3>Can I deposit Bitcoin, Ethereum, or other cryptocurrencies?</h3>
       <p>
-        No. Open Mandi only accepts USDT and USDC. You can convert other
-        cryptocurrencies to USDT or USDC on an external exchange before
-        depositing.
+        No. Open Mandi only accepts USDC deposits.
       </p>
 
-      <h3>What happens if my balance is exactly $1?</h3>
+      <h3>What happens if my balance is exactly $5?</h3>
       <p>
-        If your balance is $1.00 or more, you cannot deposit. Your balance must
-        be strictly below $1.00.
+        If your balance is $5.00 or more, you cannot deposit. Your balance must
+        be strictly below $5.00.
       </p>
 
       <h3>Can I withdraw part of my balance?</h3>

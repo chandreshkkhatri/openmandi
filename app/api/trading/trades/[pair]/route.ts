@@ -3,7 +3,7 @@ import { getRecentTrades } from "@/lib/db/queries/trading";
 
 export const dynamic = "force-dynamic";
 
-const VALID_PAIRS = ["USDT-USDC", "XAU-PERP", "XAG-PERP"];
+const VALID_PAIRS = ["XAU-PERP", "XAG-PERP"];
 
 export async function GET(
   request: NextRequest,

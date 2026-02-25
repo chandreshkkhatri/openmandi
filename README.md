@@ -6,15 +6,13 @@ Built as a learning platform to explore exchange mechanics — order matching, m
 
 ## Features
 
-- **Spot trading** — USDT/USDC exchange with a live order book
 - **Futures trading** — Gold (XAU-PERP) and Silver (XAG-PERP) perpetual contracts with up to 50x leverage
 - **Order matching engine** — price-time priority, partial fills, self-trade prevention
 - **Margin system** — initial/maintenance margin, mark pricing, and automatic liquidation
 - **Funding rates** — 8-hour intervals to keep futures prices anchored to spot
-- **Wallet system** — USDT/USDC deposits and withdrawals with balance tracking
+- **Wallet system** — USDC deposits and withdrawals with balance tracking
 - **Liquidity provision** — one-click LP tool for placing two-sided limit orders
-- **Transparency dashboard** — public exchange stats: volume, fees, order book depth, recent trades
-- **Educational docs** — 17 pages covering commodities, futures, crypto trading, and technical architecture
+- **Educational docs** — focused user guides for onboarding, futures, wallet operations, and fees
 - **Live price feed** — Gold and silver index prices from metals.dev API
 
 ## Tech Stack
@@ -34,17 +32,16 @@ Built as a learning platform to explore exchange mechanics — order matching, m
 ```
 app/
 ├── (marketing)/          # Landing page, features, how it works
-├── (docs)/docs/          # 9 user guides + 8 technical docs
+├── (docs)/docs/          # User guides (technical/developer docs deferred)
 ├── (exchange)/exchange/  # Protected trading platform
 │   ├── dashboard/        # Portfolio overview
-│   ├── exchange/         # Spot trading (USDT ↔ USDC)
+│   ├── exchange/         # Redirects to futures trading
 │   ├── trade/gold/       # XAU-PERP futures
 │   ├── trade/silver/     # XAG-PERP futures
 │   ├── positions/        # Open positions
 │   ├── wallet/           # Balance & transactions
-│   ├── deposit/          # Deposit USDT/USDC
+│   ├── deposit/          # Deposit USDC
 │   ├── withdraw/         # Withdraw funds
-│   ├── transparency/     # Public exchange stats
 │   └── settings/         # User settings
 ├── (auth)/               # Login, signup
 ├── (legal)/              # Terms of service
@@ -112,8 +109,62 @@ Copy `.env.example` to `.env.local` and fill in your values. You can also run `v
 | `POSTGRES_URL`                     | Vercel Postgres (pooled) | Yes        |
 | `POSTGRES_URL_NON_POOLING`         | Vercel Postgres (direct) | Yes        |
 | `METALS_DEV_API_KEY`               | metals.dev               | No         |
+| `EXCHANGE_DEPOSIT_ADDRESS_USDC`    | ETH address for USDC deposits | Yes   |
+| `ETH_RPC_URL`                      | Ethereum JSON-RPC endpoint | Yes (deposit sync) |
+| `CRON_SECRET`                      | Vercel cron auth secret | Yes (deposit sync) |
+| `DEPOSIT_MIN_CONFIRMATIONS`        | Required confirmations before credit | No (default: 3) |
+| `WITHDRAWAL_BROADCAST_URL`         | Payout broadcaster webhook endpoint | Yes (withdrawal sync) |
+| `WITHDRAWAL_BROADCAST_TOKEN`       | Bearer token for payout broadcaster | No |
+| `WITHDRAWAL_MIN_CONFIRMATIONS`     | Required confirmations before finalizing withdrawal | No (default: 3) |
+| `ADMIN_EMAILS`                     | Comma-separated admin emails for wallet monitor API | Yes (monitoring) |
+| `WALLET_MONITOR_STALE_MINUTES`     | Staleness threshold for wallet alerts | No (default: 30) |
+| `ETH_USDC_CONTRACT`                | Override USDC token contract (ETH) | No |
 | `BINANCE_API_KEY`                  | Binance Futures API      | For hedger |
 | `BINANCE_API_SECRET`               | Binance Futures API      | For hedger |
+
+## Real Deposit Flow (On-Chain)
+
+Deposits are no longer instant DB credits.
+
+1. User requests deposit instructions (`/api/wallet/deposit`) and gets token + network + exchange address.
+2. User sends funds on-chain.
+3. User submits transaction hash (`/api/wallet/deposit/claim`).
+4. Cron route (`/api/cron/sync-deposits`) verifies receipt/logs and credits wallet only after required confirmations.
+
+Configure Vercel cron in `vercel.json` and set `CRON_SECRET` in environment variables.
+
+## Real Withdrawal Flow (On-Chain)
+
+1. User submits withdrawal request with destination address (`/api/wallet/withdraw`).
+2. Requested amount + fee are held by reducing `availableBalance`.
+3. Cron route (`/api/cron/sync-withdrawals`) broadcasts payout via `WITHDRAWAL_BROADCAST_URL`.
+4. After on-chain confirmation, cron finalizes ledger entries and debits wallet `balance`.
+5. Failed payouts are marked rejected and held funds are released back to `availableBalance`.
+
+## Internal Exchange Wallet Management (Sprint 7 Scope)
+
+Sprint 7 includes internal wallet operations, not just user-facing deposit/withdrawal UX.
+
+- Internal wallet roles: hot wallet, treasury wallet, fee wallet, reserve wallet
+- Liability controls: user-funds segregation from exchange fee/revenue funds
+- Risk controls: operational float thresholds, payout throttles, emergency pause switches
+- Reconciliation: periodic on-chain balances vs internal ledger balances with alerting
+- Operations: treasury rebalance flows and manual-review queues for exceptions
+
+Current implementation covers user wallet lifecycle and monitoring; internal wallet orchestration and reconciliation controls are part of remaining Sprint 7 work.
+
+## Deferred Modules (Future Scope)
+
+- Transparency dashboard and transparency documentation
+- Technical/developer documentation portal
+
+These modules were removed from the active MVP navigation and routes to keep current scope focused on core trading + wallet operations.
+
+## Wallet Monitoring (Admin)
+
+- Admin API: `GET /api/admin/wallet-monitor`
+- Auth: requires logged-in user email in `ADMIN_EMAILS`
+- Returns rejected and stale deposit/withdrawal operations for operations monitoring.
 
 ## Market Maker & Hedger
 

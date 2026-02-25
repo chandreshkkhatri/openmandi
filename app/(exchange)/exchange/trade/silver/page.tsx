@@ -25,7 +25,7 @@ export default async function SilverFutures() {
   const pairConfig = PAIRS["XAG-PERP"];
 
   const [
-    { usdt, usdc },
+    { usdc },
     markData,
     orderBook,
     recentTrades,
@@ -107,7 +107,6 @@ export default async function SilverFutures() {
             pairType="futures"
             minQuantity={pairConfig.minQuantity}
             tickSize={pairConfig.tickSize}
-            usdtAvailable={parseFloat(usdt?.availableBalance ?? "0")}
             usdcAvailable={parseFloat(usdc?.availableBalance ?? "0")}
             contractSize={pairConfig.contractSize}
             maxLeverage={pairConfig.maxLeverage}

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, decimal, integer, unique, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, decimal, integer, boolean, unique, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -15,7 +15,7 @@ export const wallets = pgTable(
     userId: uuid("user_id")
       .references(() => users.id)
       .notNull(),
-    currency: text("currency").notNull(), // 'USDT' | 'USDC'
+    currency: text("currency").notNull(), // 'USDC'
     balance: decimal("balance", { precision: 18, scale: 8 }).default("0").notNull(),
     availableBalance: decimal("available_balance", { precision: 18, scale: 8 })
       .default("0")
@@ -34,7 +34,7 @@ export const transactions = pgTable("transactions", {
     .references(() => wallets.id)
     .notNull(),
   type: text("type").notNull(), // deposit | withdrawal | withdrawal_fee
-  currency: text("currency").notNull(), // USDT | USDC
+  currency: text("currency").notNull(), // USDC
   amount: decimal("amount", { precision: 18, scale: 8 }).notNull(), // positive=credit, negative=debit
   balanceAfter: decimal("balance_after", { precision: 18, scale: 8 }).notNull(),
   referenceId: uuid("reference_id"),
@@ -43,6 +43,62 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const depositClaims = pgTable(
+  "deposit_claims",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id)
+      .notNull(),
+    currency: text("currency").notNull(), // USDC
+    network: text("network").notNull(), // ETH
+    txHash: text("tx_hash").notNull(),
+    toAddress: text("to_address").notNull(),
+    fromAddress: text("from_address"),
+    amount: decimal("amount", { precision: 18, scale: 8 }),
+    confirmations: integer("confirmations").default(0).notNull(),
+    status: text("status").default("pending").notNull(), // pending | confirmed | rejected
+    rejectionReason: text("rejection_reason"),
+    confirmedAt: timestamp("confirmed_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("deposit_claims_tx_hash_unique").on(table.txHash),
+    index("deposit_claims_user_created").on(table.userId, table.createdAt),
+    index("deposit_claims_status_created").on(table.status, table.createdAt),
+  ]
+);
+
+export const withdrawalRequests = pgTable(
+  "withdrawal_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id)
+      .notNull(),
+    walletId: uuid("wallet_id")
+      .references(() => wallets.id)
+      .notNull(),
+    currency: text("currency").notNull(), // USDC
+    network: text("network").notNull(), // ETH
+    destinationAddress: text("destination_address").notNull(),
+    amount: decimal("amount", { precision: 18, scale: 8 }).notNull(),
+    fee: decimal("fee", { precision: 18, scale: 8 }).notNull(),
+    totalDebit: decimal("total_debit", { precision: 18, scale: 8 }).notNull(),
+    status: text("status").default("pending").notNull(), // pending | processing | completed | rejected | cancelled
+    payoutTxHash: text("payout_tx_hash"),
+    processedAt: timestamp("processed_at"),
+    rejectionReason: text("rejection_reason"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("withdrawal_requests_user_created").on(table.userId, table.createdAt),
+    index("withdrawal_requests_status_created").on(table.status, table.createdAt),
+  ]
+);
+
 export const orders = pgTable(
   "orders",
   {
@@ -50,7 +106,7 @@ export const orders = pgTable(
     userId: uuid("user_id")
       .references(() => users.id)
       .notNull(),
-    pair: text("pair").notNull(), // "USDT-USDC" | "XAU-PERP" | "XAG-PERP"
+    pair: text("pair").notNull(), // "XAU-PERP" | "XAG-PERP"
     side: text("side").notNull(), // "buy" | "sell"
     type: text("type").notNull(), // "limit" | "market"
     price: decimal("price", { precision: 18, scale: 8 }), // null for market orders
@@ -59,7 +115,7 @@ export const orders = pgTable(
       .default("0")
       .notNull(),
     status: text("status").default("open").notNull(), // "open" | "partial" | "filled" | "cancelled"
-    collateralCurrency: text("collateral_currency"), // "USDT" | "USDC" — futures only
+    collateralCurrency: text("collateral_currency"), // "USDC" — futures only
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -126,6 +182,78 @@ export const mmOrderStats = pgTable(
   ]
 );
 
+// ---------------------------------------------------------------------------
+// Internal Exchange Wallets
+// ---------------------------------------------------------------------------
+
+export const internalWallets = pgTable(
+  "internal_wallets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    role: text("role").notNull(), // 'hot_wallet' | 'treasury' | 'fee_wallet' | 'reserve_wallet'
+    currency: text("currency").notNull(), // 'USDC'
+    network: text("network").notNull(), // 'ETH'
+    address: text("address").notNull(),
+    label: text("label"), // human-readable name
+    ledgerBalance: decimal("ledger_balance", { precision: 18, scale: 8 })
+      .default("0")
+      .notNull(),
+    lastOnChainBalance: decimal("last_on_chain_balance", { precision: 18, scale: 8 }),
+    lastReconciledAt: timestamp("last_reconciled_at"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("internal_wallets_role_currency").on(table.role, table.currency),
+    index("internal_wallets_role").on(table.role),
+  ]
+);
+
+export const internalTransfers = pgTable(
+  "internal_transfers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    fromWalletId: uuid("from_wallet_id")
+      .references(() => internalWallets.id)
+      .notNull(),
+    toWalletId: uuid("to_wallet_id")
+      .references(() => internalWallets.id)
+      .notNull(),
+    currency: text("currency").notNull(),
+    amount: decimal("amount", { precision: 18, scale: 8 }).notNull(),
+    txHash: text("tx_hash"),
+    status: text("status").default("pending").notNull(), // 'pending' | 'confirmed' | 'failed'
+    note: text("note"),
+    initiatedBy: text("initiated_by"), // admin email
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("internal_transfers_status").on(table.status),
+    index("internal_transfers_from").on(table.fromWalletId),
+    index("internal_transfers_to").on(table.toWalletId),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Exchange Settings (key-value config for operational controls)
+// ---------------------------------------------------------------------------
+
+export const exchangeSettings = pgTable("exchange_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").unique().notNull(),
+  value: text("value").notNull(),
+  description: text("description"),
+  updatedBy: text("updated_by"), // admin email
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// Positions
+// ---------------------------------------------------------------------------
+
 export const positions = pgTable(
   "positions",
   {
@@ -138,7 +266,7 @@ export const positions = pgTable(
     entryPrice: decimal("entry_price", { precision: 18, scale: 8 }).notNull(),
     quantity: decimal("quantity", { precision: 18, scale: 8 }).notNull(),
     margin: decimal("margin", { precision: 18, scale: 8 }).notNull(),
-    collateralCurrency: text("collateral_currency").notNull(), // "USDT" | "USDC"
+    collateralCurrency: text("collateral_currency").notNull(), // "USDC"
     leverage: decimal("leverage", { precision: 5, scale: 2 }).notNull(),
     liquidationPrice: decimal("liquidation_price", { precision: 18, scale: 8 }).notNull(),
     realizedPnl: decimal("realized_pnl", { precision: 18, scale: 8 })

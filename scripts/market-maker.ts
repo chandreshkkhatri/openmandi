@@ -28,7 +28,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { eq, and } from "drizzle-orm";
 
-import { matchOrder, settleSpotTrade, settleFuturesTrade } from "../lib/services/matching";
+import { matchOrder, settleFuturesTrade } from "../lib/services/matching";
 import { calculateInitialMargin } from "../lib/services/margin";
 import { trades as tradesTable } from "../lib/db/schema";
 import type { PairKey, FuturesPair } from "../lib/trading/constants";
@@ -112,6 +112,7 @@ const mmOrderStats = pgTable("mm_order_stats", {
 neonConfig.webSocketConstructor = ws;
 const pool = new Pool({ connectionString: DATABASE_URL });
 const db = drizzle({ client: pool });
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 const REFRESH_INTERVAL_MS = 5_000; // 5 seconds
@@ -127,7 +128,6 @@ const LEVELS: [number, number][] = [
 
 const BASE_QTY_XAU = 10;
 const BASE_QTY_XAG = 10;
-const BASE_QTY_USDT = 30;
 const LEVERAGE = 10;
 
 // If an existing order's price is within this fraction of the desired price,
@@ -135,37 +135,19 @@ const LEVERAGE = 10;
 const REPRICE_THRESHOLD: Record<string, number> = {
     "XAU-PERP": 0.0002,
     "XAG-PERP": 0.0003,
-    "USDT-USDC": 0.00005,
 };
 
 const PAIR_CONFIG = {
     "XAU-PERP": { binanceSymbol: "XAUUSDT", type: "futures", contracts: "0.001", spread: 0.0005, priceDec: 2, takerFeeRate: "0.0005", baseQty: BASE_QTY_XAU },
     "XAG-PERP": { binanceSymbol: "XAGUSDT", type: "futures", contracts: "0.1", spread: 0.001, priceDec: 3, takerFeeRate: "0.0005", baseQty: BASE_QTY_XAG },
-    "USDT-USDC": { binanceSymbol: "USDCUSDT", type: "spot", contracts: "1", spread: 0.0002, priceDec: 4, takerFeeRate: "0.001", baseQty: BASE_QTY_USDT },
 } as const;
+type PairConfig = (typeof PAIR_CONFIG)[keyof typeof PAIR_CONFIG];
 
 const SYSTEM_EMAIL = `system_mm_${TAG}@openmandi.com`;
 
 // ─── Binance API ─────────────────────────────────────────────────────────────
 const BINANCE_FUTURES_BOOK_TICKER_API = "https://fapi.binance.com/fapi/v1/ticker/bookTicker";
-const BINANCE_SPOT_PRICE_API = "https://api.binance.com/api/v3/ticker/price";
-
 async function getBinancePrice(symbol: string) {
-    if (symbol === "USDCUSDT") {
-        // For stablecoin pair, use a fixed price or fetch from spot
-        try {
-            const res = await fetch(`${BINANCE_SPOT_PRICE_API}?symbol=${symbol}`);
-            if (!res.ok) throw new Error(`Binance Spot ${res.status}`);
-            const data = await res.json();
-            const price = parseFloat(data.price);
-            return { bid: price, ask: price, mid: price };
-        } catch (err) {
-            console.error(`  ⚠  Failed to fetch spot price for ${symbol}:`, (err as Error).message);
-            // Fallback to fixed 1.00 if spot fetch fails
-            return { bid: 1.00, ask: 1.00, mid: 1.00 };
-        }
-    }
-
     try {
         const res = await fetch(`${BINANCE_FUTURES_BOOK_TICKER_API}?symbol=${symbol}`);
         if (!res.ok) throw new Error(`Binance Futures ${res.status}`);
@@ -201,12 +183,6 @@ async function ensureSystemUser() {
         await db.insert(wallets).values([
             {
                 userId: user.id,
-                currency: "USDT",
-                balance: "100",
-                availableBalance: "100",
-            },
-            {
-                userId: user.id,
                 currency: "USDC",
                 balance: "100",
                 availableBalance: "100",
@@ -237,45 +213,26 @@ async function placeMMLimitOrder(
         .where(eq(wallets.userId, userId))
         .for("update");
 
-      if (config.type === "spot") {
-        const needed = side === "sell" 
-          ? parseFloat(quantity) 
-          : parseFloat(quantity) * parseFloat(price);
-        const currency = side === "sell" ? "USDT" : "USDC";
-        
-        const wallet = userWallets.find((w) => w.currency === currency);
-        if (!wallet || parseFloat(wallet.availableBalance) < needed) {
-          throw new Error("SKIP: insufficient balance");
-        }
-        await tx
-          .update(wallets)
-          .set({
-            availableBalance: sql`${wallets.availableBalance} - ${needed.toFixed(8)}::decimal`,
-            updatedAt: new Date(),
-          })
-          .where(eq(wallets.id, wallet.id));
-      } else {
-        const margin = calculateInitialMargin(
-          quantity,
-          config.contracts.toString(),
-          price,
-          LEVERAGE
-        );
-        const estFee = margin * LEVERAGE * parseFloat(config.takerFeeRate);
-        const needed = margin + estFee;
-        const wallet = userWallets.find((w) => w.currency === "USDT");
-        
-        if (!wallet || parseFloat(wallet.availableBalance) < needed) {
-          throw new Error("SKIP: insufficient balance");
-        }
-        await tx
-          .update(wallets)
-          .set({
-            availableBalance: sql`${wallets.availableBalance} - ${needed.toFixed(8)}::decimal`,
-            updatedAt: new Date(),
-          })
-          .where(eq(wallets.id, wallet.id));
+      const margin = calculateInitialMargin(
+        quantity,
+        config.contracts.toString(),
+        price,
+        LEVERAGE
+      );
+      const estFee = margin * LEVERAGE * parseFloat(config.takerFeeRate);
+      const needed = margin + estFee;
+      const wallet = userWallets.find((w) => w.currency === "USDC");
+
+      if (!wallet || parseFloat(wallet.availableBalance) < needed) {
+        throw new Error("SKIP: insufficient balance");
       }
+      await tx
+        .update(wallets)
+        .set({
+          availableBalance: sql`${wallets.availableBalance} - ${needed.toFixed(8)}::decimal`,
+          updatedAt: new Date(),
+        })
+        .where(eq(wallets.id, wallet.id));
 
       // 2. Insert order
       const [order] = await tx
@@ -288,12 +245,12 @@ async function placeMMLimitOrder(
           price,
           quantity,
           status: "open",
-          collateralCurrency: config.type === "futures" ? "USDT" : null,
+          collateralCurrency: "USDC",
         })
         .returning();
 
       // 3. Match Order
-      const matchResult = await matchOrder(tx as any, {
+      const matchResult = await matchOrder(tx as Parameters<typeof matchOrder>[0], {
         id: order.id,
         userId,
         pair,
@@ -305,7 +262,7 @@ async function placeMMLimitOrder(
 
       // 4. Settle Fills
       for (const fill of matchResult.fills) {
-        await tx.insert(tradesTable as any).values({
+        await tx.insert(tradesTable).values({
           pair,
           makerOrderId: fill.makerOrderId,
           takerOrderId: order.id,
@@ -315,28 +272,20 @@ async function placeMMLimitOrder(
           quantity: fill.quantity,
           makerFee: fill.makerFee,
           takerFee: fill.takerFee,
-        } as any);
+        });
 
-        if (config.type === "spot") {
-          await settleSpotTrade(tx as any, fill, {
+        await settleFuturesTrade(
+          tx as Parameters<typeof settleFuturesTrade>[0],
+          fill,
+          {
             id: order.id,
             userId,
             side,
-          });
-        } else {
-          await settleFuturesTrade(
-            tx as any,
-            fill,
-            {
-              id: order.id,
-              userId,
-              side,
-              collateralCurrency: "USDT",
-              leverage: LEVERAGE,
-            },
-            pair as FuturesPair
-          );
-        }
+            collateralCurrency: "USDC",
+            leverage: LEVERAGE,
+          },
+          pair as FuturesPair
+        );
       }
 
       // 5. Update Order Status
@@ -361,29 +310,22 @@ async function placeMMLimitOrder(
 
 // ─── Core: Release locked funds when cancelling an order ─────────────────────
 
-async function releaseCancelledFunds(tx: any, order: any, pairConfig: any) {
+async function releaseCancelledFunds(
+  tx: DbTransaction,
+  order: ExistingOrder,
+  pairConfig: PairConfig
+) {
   const remainingQty = parseFloat(order.quantity) - parseFloat(order.filledQuantity);
   if (remainingQty <= 0) return;
 
-  if (pairConfig.type === "spot") {
-    const lockedCurrency = order.side === "sell" ? "USDT" : "USDC";
-    const releaseAmount = order.side === "sell" ? remainingQty : remainingQty * parseFloat(order.price ?? "0");
+  const margin = calculateInitialMargin(remainingQty.toString(), pairConfig.contracts.toString(), order.price ?? "0", LEVERAGE);
+  const estFee = margin * LEVERAGE * parseFloat(pairConfig.takerFeeRate);
+  const releaseAmount = margin + estFee;
 
-    if (releaseAmount > 0) {
-      await tx.update(wallets)
-        .set({ availableBalance: sql`${wallets.availableBalance} + ${releaseAmount.toFixed(8)}::decimal` })
-        .where(and(eq(wallets.userId, order.userId), eq(wallets.currency, lockedCurrency)));
-    }
-  } else {
-    const margin = calculateInitialMargin(remainingQty.toString(), pairConfig.contracts.toString(), order.price ?? "0", LEVERAGE);
-    const estFee = margin * LEVERAGE * parseFloat(pairConfig.takerFeeRate);
-    const releaseAmount = margin + estFee;
-
-    if (releaseAmount > 0) {
-      await tx.update(wallets)
-        .set({ availableBalance: sql`${wallets.availableBalance} + ${releaseAmount.toFixed(8)}::decimal` })
-        .where(and(eq(wallets.userId, order.userId), eq(wallets.currency, "USDT")));
-    }
+  if (releaseAmount > 0) {
+    await tx.update(wallets)
+      .set({ availableBalance: sql`${wallets.availableBalance} + ${releaseAmount.toFixed(8)}::decimal` })
+      .where(and(eq(wallets.userId, order.userId), eq(wallets.currency, "USDC")));
   }
 }
 
@@ -520,7 +462,7 @@ async function cancelOrders(orderList: ExistingOrder[]): Promise<number> {
  * Aggregate cancelled order metadata into mm_order_stats, then hard-delete
  * orders that had zero fills. Orders with partial fills are retained (FK refs from trades).
  */
-async function aggregateAndDeleteCancelled(tx: any, orderList: ExistingOrder[]) {
+async function aggregateAndDeleteCancelled(tx: DbTransaction, orderList: ExistingOrder[]) {
   // Group by pair + side
   const groups = new Map<string, ExistingOrder[]>();
   for (const order of orderList) {
@@ -619,10 +561,9 @@ async function tick(userId: string) {
     }
 
     // 1. Fetch prices in parallel
-    const [xau, xag, usdc] = await Promise.all([
+    const [xau, xag] = await Promise.all([
         getBinancePrice("XAUUSDT"),
         getBinancePrice("XAGUSDT"),
-        getBinancePrice("USDCUSDT"),
     ]);
 
     if (!xau || !xag) {
@@ -633,7 +574,6 @@ async function tick(userId: string) {
     const midPrices: Record<string, number> = {
         "XAU-PERP": xau.mid,
         "XAG-PERP": xag.mid,
-        "USDT-USDC": usdc?.mid ?? 1.0,
     };
 
     // 2. Build desired grid for all pairs
@@ -703,9 +643,9 @@ async function main() {
     console.log(`   Tag:       ${TAG}`);
     console.log(`   DB Host:   ${dbHost}`);
     console.log(`   User:      ${SYSTEM_EMAIL}`);
-    console.log(`   Levels:    ${LEVELS.length} per side × 3 pairs = ${LEVELS.length * 2 * 3} target orders`);
+    console.log(`   Levels:    ${LEVELS.length} per side × 2 pairs = ${LEVELS.length * 2 * 2} target orders`);
     console.log(`   Interval:  ${REFRESH_INTERVAL_MS / 1000}s`);
-    console.log(`   Threshold: XAU ${(REPRICE_THRESHOLD["XAU-PERP"] * 100).toFixed(2)}% | XAG ${(REPRICE_THRESHOLD["XAG-PERP"] * 100).toFixed(2)}% | USDT ${(REPRICE_THRESHOLD["USDT-USDC"] * 100).toFixed(3)}%\n`);
+    console.log(`   Threshold: XAU ${(REPRICE_THRESHOLD["XAU-PERP"] * 100).toFixed(2)}% | XAG ${(REPRICE_THRESHOLD["XAG-PERP"] * 100).toFixed(2)}%\n`);
 
     const user = await ensureSystemUser();
     console.log(`   User ID:   ${user.id}`);

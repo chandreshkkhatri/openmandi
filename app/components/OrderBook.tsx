@@ -15,8 +15,7 @@ export default function OrderBook({ bids, asks, pair, accentColor = "gold" }: Or
     1
   );
 
-  // Determine decimal places based on pair
-  const priceDecimals = pair === "USDT-USDC" ? 4 : pair === "XAG-PERP" ? 3 : 2;
+  const priceDecimals = pair === "XAG-PERP" ? 3 : 2;
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-4">

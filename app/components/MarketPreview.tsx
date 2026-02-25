@@ -2,7 +2,7 @@ const markets = [
   {
     symbol: "Au",
     name: "Gold Futures",
-    pair: "XAU/USDT Perpetual",
+    pair: "XAU-PERP",
     price: "$2,847.50",
     change: "+1.24%",
     color: "gold" as const,
@@ -10,7 +10,7 @@ const markets = [
   {
     symbol: "Ag",
     name: "Silver Futures",
-    pair: "XAG/USDT Perpetual",
+    pair: "XAG-PERP",
     price: "$31.42",
     change: "+0.87%",
     color: "silver" as const,

@@ -17,7 +17,7 @@ const topics = [
     href: "/docs/technical/price-discovery",
     title: "Price Discovery",
     description:
-      "USDT/USDC free-market pricing mechanism and order book dynamics.",
+      "Futures market pricing, mark price composition, and order book dynamics.",
   },
   {
     href: "/docs/technical/futures-specs",

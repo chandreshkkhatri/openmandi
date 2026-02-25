@@ -41,66 +41,32 @@ export async function DELETE(
       const unfilledQty =
         parseFloat(order.quantity) - parseFloat(order.filledQuantity);
 
-      // Release locked funds
-      if (pairConfig.type === "spot") {
-        if (order.side === "buy" && order.price) {
-          // Release locked USDC
-          const lockedAmount = unfilledQty * parseFloat(order.price);
-          await tx
-            .update(wallets)
-            .set({
-              availableBalance: sql`${wallets.availableBalance} + ${lockedAmount.toFixed(8)}::decimal`,
-              updatedAt: new Date(),
-            })
-            .where(
-              and(
-                eq(wallets.userId, user.id),
-                eq(wallets.currency, "USDC")
-              )
-            );
-        } else if (order.side === "sell") {
-          // Release locked USDT
-          await tx
-            .update(wallets)
-            .set({
-              availableBalance: sql`${wallets.availableBalance} + ${unfilledQty.toFixed(8)}::decimal`,
-              updatedAt: new Date(),
-            })
-            .where(
-              and(
-                eq(wallets.userId, user.id),
-                eq(wallets.currency, "USDT")
-              )
-            );
-        }
-      } else {
-        // Futures: release locked margin
-        const futuresConfig = pairConfig as typeof PAIRS["XAU-PERP"];
-        if (order.price) {
-          const marginLocked = calculateInitialMargin(
-            unfilledQty.toString(),
-            futuresConfig.contractSize,
-            order.price,
-            50 // Use max leverage for conservative estimate
-          );
-          const estFee =
-            marginLocked * 50 * parseFloat(futuresConfig.takerFeeRate);
-          const totalRelease = marginLocked + estFee;
+      // Futures: release locked margin
+      const futuresConfig = pairConfig as typeof PAIRS["XAU-PERP"];
+      if (order.price) {
+        const marginLocked = calculateInitialMargin(
+          unfilledQty.toString(),
+          futuresConfig.contractSize,
+          order.price,
+          50
+        );
+        const estFee =
+          marginLocked * 50 * parseFloat(futuresConfig.takerFeeRate);
+        const totalRelease = marginLocked + estFee;
 
-          const collateral = order.collateralCurrency || "USDT";
-          await tx
-            .update(wallets)
-            .set({
-              availableBalance: sql`${wallets.availableBalance} + ${totalRelease.toFixed(8)}::decimal`,
-              updatedAt: new Date(),
-            })
-            .where(
-              and(
-                eq(wallets.userId, user.id),
-                eq(wallets.currency, collateral)
-              )
-            );
-        }
+        const collateral = order.collateralCurrency || "USDC";
+        await tx
+          .update(wallets)
+          .set({
+            availableBalance: sql`${wallets.availableBalance} + ${totalRelease.toFixed(8)}::decimal`,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(wallets.userId, user.id),
+              eq(wallets.currency, collateral)
+            )
+          );
       }
 
       // Cancel the order

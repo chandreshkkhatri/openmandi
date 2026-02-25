@@ -118,7 +118,7 @@ export default function ApiReference() {
             <td>
               <code>/wallet</code>
             </td>
-            <td>Get balances (USDT and USDC)</td>
+            <td>Get balances (USDC)</td>
           </tr>
           <tr>
             <td>GET</td>
@@ -132,62 +132,21 @@ export default function ApiReference() {
             <td>
               <code>/wallet/deposit</code>
             </td>
-            <td>Initiate a deposit (max $5, balance &lt; $1)</td>
+            <td>Get deposit instructions (USDC)</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td>
+              <code>/wallet/deposit/claim</code>
+            </td>
+            <td>Submit deposit tx-hash claim for verification</td>
           </tr>
           <tr>
             <td>POST</td>
             <td>
               <code>/wallet/withdraw</code>
             </td>
-            <td>Initiate a withdrawal (balance &gt;= $10)</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h3>Stablecoin Exchange (USDT/USDC)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Method</th>
-            <th>Path</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/orderbook/usdt-usdc</code>
-            </td>
-            <td>Get current order book</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/exchange/trades</code>
-            </td>
-            <td>Get recent trades</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/exchange/order</code>
-            </td>
-            <td>Place a buy/sell order</td>
-          </tr>
-          <tr>
-            <td>DELETE</td>
-            <td>
-              <code>/exchange/order/:id</code>
-            </td>
-            <td>Cancel an open order</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/exchange/orders</code>
-            </td>
-            <td>Get user&apos;s open orders</td>
+            <td>Create withdrawal request (balance &gt;= $10)</td>
           </tr>
         </tbody>
       </table>

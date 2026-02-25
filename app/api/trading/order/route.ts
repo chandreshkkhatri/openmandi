@@ -6,12 +6,12 @@ import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { PAIRS } from "@/lib/trading/constants";
 import type { PairKey, FuturesPair } from "@/lib/trading/constants";
-import { matchOrder, settleSpotTrade, settleFuturesTrade } from "@/lib/services/matching";
+import { matchOrder, settleFuturesTrade } from "@/lib/services/matching";
 import { calculateInitialMargin } from "@/lib/services/margin";
 import { trades as tradesTable } from "@/lib/db/schema";
 
 const orderSchema = z.object({
-  pair: z.enum(["USDT-USDC", "XAU-PERP", "XAG-PERP"]),
+  pair: z.enum(["XAU-PERP", "XAG-PERP"]),
   side: z.enum(["buy", "sell"]),
   type: z.enum(["limit", "market"]),
   price: z.string().optional(),
@@ -19,7 +19,7 @@ const orderSchema = z.object({
     const num = parseFloat(val);
     return !isNaN(num) && num > 0;
   }, "Quantity must be positive"),
-  collateralCurrency: z.enum(["USDT", "USDC"]).optional(),
+  collateralCurrency: z.enum(["USDC"]).optional(),
   leverage: z.number().min(1).max(50).optional(),
 });
 
@@ -53,20 +53,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate futures-specific fields
-    if (pairConfig.type === "futures") {
-      if (!parsed.collateralCurrency) {
-        return NextResponse.json(
-          { success: false, error: "Futures orders require collateralCurrency" },
-          { status: 400 }
-        );
-      }
-      if (!parsed.leverage) {
-        return NextResponse.json(
-          { success: false, error: "Futures orders require leverage" },
-          { status: 400 }
-        );
-      }
+    if (!parsed.collateralCurrency) {
+      return NextResponse.json(
+        { success: false, error: "Futures orders require collateralCurrency" },
+        { status: 400 }
+      );
+    }
+    if (!parsed.leverage) {
+      return NextResponse.json(
+        { success: false, error: "Futures orders require leverage" },
+        { status: 400 }
+      );
     }
 
     // Validate quantity meets minimum
@@ -88,90 +85,45 @@ export async function POST(request: NextRequest) {
       const getWallet = (currency: string) =>
         userWallets.find((w) => w.currency === currency);
 
-      // Calculate and lock required funds
-      if (pairConfig.type === "spot") {
-        // Spot: lock the currency being sold
-        if (parsed.side === "buy") {
-          // Buying USDT, paying USDC
-          if (parsed.type === "limit") {
-            const required = parseFloat(parsed.quantity) * parseFloat(parsed.price!);
-            const usdcWallet = getWallet("USDC");
-            if (!usdcWallet || parseFloat(usdcWallet.availableBalance) < required) {
-              throw new Error(
-                `Insufficient USDC balance. Required: $${required.toFixed(2)}, Available: $${parseFloat(usdcWallet?.availableBalance ?? "0").toFixed(2)}`
-              );
-            }
-            // Lock USDC
-            await tx
-              .update(wallets)
-              .set({
-                availableBalance: sql`${wallets.availableBalance} - ${required.toFixed(8)}::decimal`,
-                updatedAt: new Date(),
-              })
-              .where(eq(wallets.id, usdcWallet.id));
-          }
-          // Market buy: we don't know the price yet, so we can't pre-lock exact amount.
-          // For simplicity, skip pre-locking for market orders — settlement handles it.
-        } else {
-          // Selling USDT, receiving USDC
-          const usdtWallet = getWallet("USDT");
-          if (!usdtWallet || parseFloat(usdtWallet.availableBalance) < parseFloat(parsed.quantity)) {
-            throw new Error(
-              `Insufficient USDT balance. Required: ${parsed.quantity}, Available: ${usdtWallet?.availableBalance ?? "0"}`
-            );
-          }
-          // Lock USDT
-          await tx
-            .update(wallets)
-            .set({
-              availableBalance: sql`${wallets.availableBalance} - ${parsed.quantity}::decimal`,
-              updatedAt: new Date(),
-            })
-            .where(eq(wallets.id, usdtWallet.id));
-        }
+      // Futures: lock margin
+      const futuresConfig = pairConfig as typeof PAIRS["XAU-PERP"];
+      const leverage = parsed.leverage!;
+      const collateral = parsed.collateralCurrency!;
+
+      // For limit orders, use the order price. For market, estimate with a reasonable price.
+      const priceForMargin = parsed.price ?? "0";
+      if (parsed.type === "market") {
+        // Market orders need price estimation — skip pre-lock, handled at settlement
       } else {
-        // Futures: lock margin
-        const futuresConfig = pairConfig as typeof PAIRS["XAU-PERP"];
-        const leverage = parsed.leverage!;
-        const collateral = parsed.collateralCurrency!;
+        const marginRequired = calculateInitialMargin(
+          parsed.quantity,
+          futuresConfig.contractSize,
+          priceForMargin,
+          leverage
+        );
+        const estFee =
+          marginRequired *
+          leverage *
+          parseFloat(futuresConfig.takerFeeRate);
+        const totalRequired = marginRequired + estFee;
 
-        // For limit orders, use the order price. For market, estimate with a reasonable price.
-        const priceForMargin = parsed.price ?? "0";
-        if (parsed.type === "market") {
-          // Market orders need price estimation — skip pre-lock, handled at settlement
-        } else {
-          const marginRequired = calculateInitialMargin(
-            parsed.quantity,
-            futuresConfig.contractSize,
-            priceForMargin,
-            leverage
+        const collateralWallet = getWallet(collateral);
+        if (
+          !collateralWallet ||
+          parseFloat(collateralWallet.availableBalance) < totalRequired
+        ) {
+          throw new Error(
+            `Insufficient ${collateral} balance. Required: $${totalRequired.toFixed(2)}, Available: $${parseFloat(collateralWallet?.availableBalance ?? "0").toFixed(2)}`
           );
-          // Add estimated taker fee
-          const estFee =
-            marginRequired *
-            leverage *
-            parseFloat(futuresConfig.takerFeeRate);
-          const totalRequired = marginRequired + estFee;
-
-          const collateralWallet = getWallet(collateral);
-          if (
-            !collateralWallet ||
-            parseFloat(collateralWallet.availableBalance) < totalRequired
-          ) {
-            throw new Error(
-              `Insufficient ${collateral} balance. Required: $${totalRequired.toFixed(2)}, Available: $${parseFloat(collateralWallet?.availableBalance ?? "0").toFixed(2)}`
-            );
-          }
-
-          // Lock margin
-          await tx
-            .update(wallets)
-            .set({
-              availableBalance: sql`${wallets.availableBalance} - ${totalRequired.toFixed(8)}::decimal`,
-              updatedAt: new Date(),
-            })
-            .where(eq(wallets.id, collateralWallet.id));
         }
+
+        await tx
+          .update(wallets)
+          .set({
+            availableBalance: sql`${wallets.availableBalance} - ${totalRequired.toFixed(8)}::decimal`,
+            updatedAt: new Date(),
+          })
+          .where(eq(wallets.id, collateralWallet.id));
       }
 
       // Insert order
@@ -215,27 +167,18 @@ export async function POST(request: NextRequest) {
           takerFee: fill.takerFee,
         });
 
-        // Settle
-        if (pairConfig.type === "spot") {
-          await settleSpotTrade(tx, fill, {
+        await settleFuturesTrade(
+          tx,
+          fill,
+          {
             id: order.id,
             userId: user.id,
             side: parsed.side,
-          });
-        } else {
-          await settleFuturesTrade(
-            tx,
-            fill,
-            {
-              id: order.id,
-              userId: user.id,
-              side: parsed.side,
-              collateralCurrency: parsed.collateralCurrency!,
-              leverage: parsed.leverage!,
-            },
-            parsed.pair as FuturesPair
-          );
-        }
+            collateralCurrency: parsed.collateralCurrency!,
+            leverage: parsed.leverage!,
+          },
+          parsed.pair as FuturesPair
+        );
       }
 
       // Update order status

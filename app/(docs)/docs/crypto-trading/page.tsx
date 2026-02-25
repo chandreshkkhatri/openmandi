@@ -20,12 +20,8 @@ export default function CryptoTrading() {
         stablecoins are pegged to real-world currencies &mdash; usually the US
         dollar.
       </p>
-      <p>Open Mandi accepts two stablecoins:</p>
+      <p>Open Mandi accepts USDC as its trading stablecoin:</p>
       <ul>
-        <li>
-          <strong>USDT (Tether)</strong> &mdash; the most widely used stablecoin,
-          where 1 USDT is designed to equal 1 US dollar
-        </li>
         <li>
           <strong>USDC (USD Coin)</strong> &mdash; a fully-reserved stablecoin
           backed by US dollar assets, where 1 USDC is designed to equal 1 US
@@ -61,10 +57,8 @@ export default function CryptoTrading() {
 
       <h2>How Your Funds are Managed</h2>
       <p>
-        When you deposit USDT or USDC into Open Mandi, your balance is tracked
-        on the platform. Your funds are used as collateral for trading futures
-        and can be exchanged between USDT and USDC using the built-in stablecoin
-        exchange.
+        When you deposit USDC into Open Mandi, your balance is tracked on the
+        platform. Your funds are used as collateral for trading futures.
       </p>
       <p>
         Every transaction &mdash; deposits, withdrawals, trades, and fees
@@ -83,18 +77,11 @@ export default function CryptoTrading() {
         can take two business days (known as T+2 settlement).
       </p>
 
-      <h2>The Two-Stablecoin System</h2>
+      <h2>USDC-Only Collateral Model</h2>
       <p>
-        An interesting feature of Open Mandi is that USDT and USDC trade
-        against each other on an open market. Even though both are designed to
-        be worth $1, the exchange rate between them on our platform is determined
-        by supply and demand.
-      </p>
-      <p>
-        This means the rate might be slightly above or below 1:1 at any given
-        time, depending on what traders are buying and selling. This teaches an
-        important concept about how markets work: prices are determined by
-        participants, not by decree.
+        Open Mandi uses a single-collateral model with USDC for deposits,
+        margin, settlement, and withdrawals. This keeps accounting simple and
+        makes risk calculations easier to reason about.
       </p>
 
       <h2>Advantages Over Traditional Brokerages</h2>

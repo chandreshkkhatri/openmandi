@@ -10,7 +10,7 @@ export default function GettingStarted() {
 
       <p className="lead">
         Open Mandi is an academic cryptocurrency-based commodities exchange
-        where you can trade gold and silver futures using stablecoins. This guide
+        where you can trade gold and silver futures using USDC. This guide
         will walk you through everything you need to get up and running.
       </p>
 
@@ -18,9 +18,8 @@ export default function GettingStarted() {
       <p>
         Open Mandi is a learning-focused trading platform. It lets you
         experience how a real commodities exchange works, but in a safe,
-        low-stakes environment. You trade with small amounts of USDT and USDC
-        (two popular stablecoins pegged to the US dollar), and you can buy and
-        sell futures contracts for gold and silver.
+        low-stakes environment. You trade with small amounts of USDC and can
+        buy and sell futures contracts for gold and silver.
       </p>
       <p>
         Because this is an academic project, we&apos;ve designed it with strict
@@ -39,18 +38,8 @@ export default function GettingStarted() {
       <h2>Step 2: Make Your First Deposit</h2>
       <p>
         To start trading, you need to deposit some funds. Open Mandi accepts
-        two stablecoins:
+        USDC.
       </p>
-      <ul>
-        <li>
-          <strong>USDT</strong> (Tether) &mdash; a stablecoin pegged to the US
-          dollar
-        </li>
-        <li>
-          <strong>USDC</strong> (USD Coin) &mdash; another stablecoin pegged to
-          the US dollar
-        </li>
-      </ul>
       <p>There are a couple of rules to keep in mind:</p>
       <ul>
         <li>
@@ -58,7 +47,7 @@ export default function GettingStarted() {
         </li>
         <li>
           You can only deposit when your account balance is{" "}
-          <strong>below $1</strong>
+          <strong>below $5</strong>
         </li>
       </ul>
       <p>
@@ -73,20 +62,14 @@ export default function GettingStarted() {
       <h2>Step 3: Explore the Dashboard</h2>
       <p>
         Your dashboard is your home base. From here, you can see your current
-        balances in USDT and USDC, view the markets for gold and silver futures,
+        balance in USDC, view the markets for gold and silver futures,
         and access all the tools you need.
       </p>
 
-      <h2>Step 4: Exchange Stablecoins (Optional)</h2>
+      <h2>Step 4: Explore Futures Markets</h2>
       <p>
-        If you deposited USDT but want to trade with USDC (or vice versa), you
-        can use the built-in stablecoin exchange. The exchange rate between USDT
-        and USDC isn&apos;t fixed at 1:1 &mdash; it&apos;s determined by other
-        users buying and selling on the order book, just like a real market.
-      </p>
-      <p>
-        Learn more about how this works in our{" "}
-        <Link href="/docs/stablecoin-exchange">Stablecoin Exchange guide</Link>.
+        Navigate to Gold Futures or Silver Futures to inspect order books,
+        current mark prices, and funding data before placing your first trade.
       </p>
 
       <h2>Step 5: Make Your First Trade</h2>
@@ -140,9 +123,6 @@ export default function GettingStarted() {
         </li>
         <li>
           <Link href="/docs/fees">Fee Structure</Link>
-        </li>
-        <li>
-          <Link href="/docs/transparency">Transparency Dashboard</Link>
         </li>
       </ul>
     </article>

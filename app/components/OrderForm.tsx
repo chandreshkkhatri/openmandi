@@ -10,7 +10,6 @@ interface OrderFormProps {
   pairType: "spot" | "futures";
   minQuantity: string;
   tickSize: string;
-  usdtAvailable: number;
   usdcAvailable: number;
   contractSize?: string;
   maxLeverage?: number;
@@ -24,7 +23,6 @@ export default function OrderForm({
   pairType,
   minQuantity,
   tickSize,
-  usdtAvailable,
   usdcAvailable,
   contractSize,
   maxLeverage = 50,
@@ -37,7 +35,7 @@ export default function OrderForm({
   const [orderType, setOrderType] = useState<"limit" | "market">("limit");
   const [price, setPrice] = useState(currentPrice ?? "");
   const [quantity, setQuantity] = useState("");
-  const [collateral, setCollateral] = useState<"USDT" | "USDC">("USDT");
+  const collateral = "USDC" as const;
   const [leverage, setLeverage] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -204,24 +202,8 @@ export default function OrderForm({
               <label className="mb-1.5 block text-sm text-zinc-400">
                 Collateral
               </label>
-              <div className="flex gap-2">
-                {(["USDT", "USDC"] as const).map((c) => {
-                  const currencyColor = getCurrencyColor(c);
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCollateral(c)}
-                      className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                        collateral === c
-                          ? `border-accent-${currencyColor} bg-accent-${currencyColor}/10 text-accent-${currencyColor}`
-                          : "border-border text-zinc-400 hover:text-white"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  );
-                })}
+              <div className={`rounded-lg border border-accent-${getCurrencyColor("USDC")}/30 bg-accent-${getCurrencyColor("USDC")}/10 px-4 py-2 text-sm font-medium text-accent-${getCurrencyColor("USDC")}`}>
+                USDC
               </div>
             </div>
 
@@ -253,7 +235,7 @@ export default function OrderForm({
                 <>
                   <div className="flex justify-between">
                     <dt className="text-zinc-400">
-                      {side === "buy" ? "Cost (USDC)" : "Sell (USDT)"}
+                      {side === "buy" ? "Cost (USDC)" : "Sell Amount"}
                     </dt>
                     <dd className="font-mono text-white">
                       ${estimatedCost.toFixed(2)}
@@ -262,11 +244,7 @@ export default function OrderForm({
                   <div className="flex justify-between">
                     <dt className="text-zinc-400">Available</dt>
                     <dd className="font-mono text-zinc-300">
-                      $
-                      {(side === "buy"
-                        ? usdcAvailable
-                        : usdtAvailable
-                      ).toFixed(2)}
+                      ${usdcAvailable.toFixed(2)}
                     </dd>
                   </div>
                 </>
@@ -281,11 +259,7 @@ export default function OrderForm({
                   <div className="flex justify-between">
                     <dt className="text-zinc-400">Available ({collateral})</dt>
                     <dd className="font-mono text-zinc-300">
-                      $
-                      {(collateral === "USDT"
-                        ? usdtAvailable
-                        : usdcAvailable
-                      ).toFixed(2)}
+                      ${usdcAvailable.toFixed(2)}
                     </dd>
                   </div>
                 </>

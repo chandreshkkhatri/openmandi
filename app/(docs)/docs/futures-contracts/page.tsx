@@ -78,7 +78,7 @@ export default function FuturesContracts() {
         contract value that acts as collateral.
       </p>
       <p>
-        On Open Mandi, your margin is held in USDT or USDC. If the market
+        On Open Mandi, your margin is held in USDC. If the market
         moves against you and your margin runs low, you may need to add more
         funds or your position could be <strong>liquidated</strong> (
         automatically closed) to prevent further losses.
@@ -100,7 +100,7 @@ export default function FuturesContracts() {
       <p>
         Futures contracts on Open Mandi are settled in stablecoins. When a
         contract expires or when you close your position, the profit or loss is
-        calculated and your USDT/USDC balance is updated accordingly.
+        calculated and your USDC balance is updated accordingly.
       </p>
 
       <h2>Risks of Futures Trading</h2>
