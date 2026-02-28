@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebase/admin";
 import { db } from "@/lib/db";
 import { users, wallets } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { deriveDepositAddress, getDepositMnemonic } from "@/lib/services/deposit-addresses";
 
 const loginSchema = z.object({
   idToken: z.string().min(1),
@@ -66,18 +67,60 @@ export async function POST(request: NextRequest) {
 
         user = updatedUser;
       } else {
-        // New user — create user record + wallets
+        // New user — create user record + wallets + deposit address
+        const mnemonic = getDepositMnemonic();
+
+        // Atomically assign next deposit index
+        const [{ nextIndex }] = await db
+          .select({
+            nextIndex: sql<number>`COALESCE(MAX(${users.depositIndex}), -1) + 1`,
+          })
+          .from(users);
+
+        const depositAddress = deriveDepositAddress(mnemonic, nextIndex);
+
         const [newUser] = await db
           .insert(users)
           .values({
             firebaseUid: decoded.uid,
             email: decoded.email,
+            depositIndex: nextIndex,
+            depositAddress: depositAddress.toLowerCase(),
           })
           .returning();
 
         user = newUser;
 
         await db.insert(wallets).values({ userId: user.id, currency: "USDC" });
+      }
+    }
+
+    // Backfill deposit address for existing users who don't have one yet
+    if (user && !user.depositAddress) {
+      try {
+        const mnemonic = getDepositMnemonic();
+        const [{ nextIndex }] = await db
+          .select({
+            nextIndex: sql<number>`COALESCE(MAX(${users.depositIndex}), -1) + 1`,
+          })
+          .from(users);
+
+        const depositAddress = deriveDepositAddress(mnemonic, nextIndex);
+
+        const [updatedUser] = await db
+          .update(users)
+          .set({
+            depositIndex: nextIndex,
+            depositAddress: depositAddress.toLowerCase(),
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, user.id))
+          .returning();
+
+        user = updatedUser;
+      } catch (e) {
+        // Non-fatal: user can still log in, deposit address assigned next time
+        console.error("Failed to backfill deposit address:", e);
       }
     }
 

@@ -9,7 +9,6 @@ const CURRENCY_CONFIG = {
     tokenContract:
       process.env.ETH_USDC_CONTRACT ?? "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
     tokenDecimals: 6,
-    depositAddress: process.env.EXCHANGE_DEPOSIT_ADDRESS_USDC,
   },
 } as const;
 
@@ -63,7 +62,7 @@ export async function GET(request: NextRequest) {
       const currency = claim.currency as "USDC";
       const config = CURRENCY_CONFIG[currency];
 
-      if (!config || !config.depositAddress) {
+      if (!config) {
         await db
           .update(depositClaims)
           .set({
@@ -76,10 +75,24 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      // Verify against this user's unique deposit address (stored on the claim)
+      if (!claim.toAddress) {
+        await db
+          .update(depositClaims)
+          .set({
+            status: "rejected",
+            rejectionReason: "No deposit address associated with this claim",
+            updatedAt: new Date(),
+          })
+          .where(eq(depositClaims.id, claim.id));
+        rejectedCount++;
+        continue;
+      }
+
       const verification = await verifyErc20Deposit({
         txHash: claim.txHash,
         tokenContract: config.tokenContract,
-        expectedToAddress: config.depositAddress,
+        expectedToAddress: claim.toAddress,
         tokenDecimals: config.tokenDecimals,
         minConfirmations,
         rpcUrl,

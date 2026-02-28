@@ -4,6 +4,8 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   firebaseUid: text("firebase_uid").unique().notNull(),
   email: text("email").unique().notNull(),
+  depositIndex: integer("deposit_index").unique(),
+  depositAddress: text("deposit_address"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -15,10 +15,6 @@ const CURRENCY_NETWORK = {
   USDC: "ETH",
 } as const;
 
-const CURRENCY_DEPOSIT_ADDRESS = {
-  USDC: process.env.EXCHANGE_DEPOSIT_ADDRESS_USDC,
-} as const;
-
 export async function POST(request: NextRequest) {
   try {
     const user = await getSession();
@@ -29,20 +25,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { currency, txHash } = claimSchema.parse(body);
-
-    const toAddress = CURRENCY_DEPOSIT_ADDRESS[currency];
-    if (!toAddress) {
+    // Each user now has their own unique deposit address
+    if (!user.depositAddress) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            `Deposit address is not configured for ${currency}. Set EXCHANGE_DEPOSIT_ADDRESS_${currency}.`,
+          error: "Your deposit address has not been assigned yet. Please log out and log back in.",
         },
         { status: 503 }
       );
     }
+
+    const body = await request.json();
+    const { currency, txHash } = claimSchema.parse(body);
 
     const [created] = await db
       .insert(depositClaims)
@@ -51,7 +46,7 @@ export async function POST(request: NextRequest) {
         currency,
         network: CURRENCY_NETWORK[currency],
         txHash: txHash.toLowerCase(),
-        toAddress: toAddress.toLowerCase(),
+        toAddress: user.depositAddress.toLowerCase(),
         status: "pending",
       })
       .onConflictDoNothing({ target: depositClaims.txHash })

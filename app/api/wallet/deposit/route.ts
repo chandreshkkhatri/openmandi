@@ -11,7 +11,6 @@ const CURRENCY_CONFIG = {
     network: "ETH",
     contractAddress:
       process.env.ETH_USDC_CONTRACT ?? "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-    depositAddress: process.env.EXCHANGE_DEPOSIT_ADDRESS_USDC,
   },
 } as const;
 
@@ -29,12 +28,13 @@ export async function POST(request: NextRequest) {
     const { currency } = depositSchema.parse(body);
     const config = CURRENCY_CONFIG[currency];
 
-    if (!config.depositAddress) {
+    // Each user has a unique deposit address derived from HD wallet
+    if (!user.depositAddress) {
       return NextResponse.json(
         {
           success: false,
           error:
-            `Deposit address is not configured for ${currency}. Set EXCHANGE_DEPOSIT_ADDRESS_${currency}.`,
+            "Your deposit address has not been assigned yet. Please log out and log back in, or contact support.",
         },
         { status: 503 }
       );
@@ -46,10 +46,10 @@ export async function POST(request: NextRequest) {
         currency,
         network: config.network,
         tokenContract: config.contractAddress,
-        address: config.depositAddress,
+        address: user.depositAddress,
         minConfirmations: Number(process.env.DEPOSIT_MIN_CONFIRMATIONS ?? "3"),
         note:
-          "Send only this token on this network. Funds are credited after on-chain confirmation and claim verification.",
+          "This is YOUR unique deposit address. Send only this token on this network. Funds are credited after on-chain confirmation.",
       },
     });
   } catch (error) {
