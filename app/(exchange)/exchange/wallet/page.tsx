@@ -8,6 +8,7 @@ import {
   getPendingWithdrawalTotal,
 } from "@/lib/db/queries/wallet";
 import Link from "next/link";
+import CopyButton from "@/app/components/CopyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -140,9 +141,16 @@ export default async function Wallet() {
                         {request.status}
                       </span>
                     </div>
-                    <p className="text-zinc-500">
-                      To: {request.destinationAddress.slice(0, 10)}...{request.destinationAddress.slice(-6)}
+                    <p className="flex items-center text-zinc-500">
+                      <span>To: {request.destinationAddress.slice(0, 10)}...{request.destinationAddress.slice(-6)}</span>
+                      <CopyButton text={request.destinationAddress} />
                     </p>
+                    {request.payoutTxHash && (
+                      <p className="mt-0.5 flex items-center font-mono text-zinc-500">
+                        <span>Tx: {request.payoutTxHash.slice(0, 14)}...{request.payoutTxHash.slice(-8)}</span>
+                        <CopyButton text={request.payoutTxHash} />
+                      </p>
+                    )}
                   </div>
                 );
               })}

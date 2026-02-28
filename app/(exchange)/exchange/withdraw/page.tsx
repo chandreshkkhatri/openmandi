@@ -6,6 +6,7 @@ import {
   getPendingWithdrawalTotal,
 } from "@/lib/db/queries/wallet";
 import WithdrawForm from "@/app/components/WithdrawForm";
+import CopyButton from "@/app/components/CopyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -120,12 +121,13 @@ export default async function Withdraw() {
                       <p className="font-mono text-sm text-white">
                         ${parseFloat(req.amount).toFixed(2)} {req.currency}
                       </p>
-                      <p className="mt-0.5 font-mono text-xs text-zinc-500">
-                        To: {req.destinationAddress.slice(0, 10)}...{req.destinationAddress.slice(-6)}
+                      <p className="mt-0.5 flex items-center font-mono text-xs text-zinc-500">
+                        <span>To: {req.destinationAddress.slice(0, 10)}...{req.destinationAddress.slice(-6)}</span>
+                        <CopyButton text={req.destinationAddress} />
                       </p>
                     </div>
                     <span
-                      className={`rounded-full border px-2 py-0.5 text-xs font-medium ${style.bg} ${style.text}`}
+                      className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${style.bg} ${style.text}`}
                     >
                       {style.label}
                     </span>
@@ -144,8 +146,9 @@ export default async function Withdraw() {
                     </span>
                   </div>
                   {req.payoutTxHash && (
-                    <p className="mt-1 font-mono text-xs text-zinc-500">
-                      Tx: {req.payoutTxHash.slice(0, 14)}...{req.payoutTxHash.slice(-8)}
+                    <p className="mt-1 flex items-center font-mono text-xs text-zinc-500">
+                      <span>Tx: {req.payoutTxHash.slice(0, 14)}...{req.payoutTxHash.slice(-8)}</span>
+                      <CopyButton text={req.payoutTxHash} />
                     </p>
                   )}
                   {req.rejectionReason && (
