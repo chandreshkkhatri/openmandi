@@ -7,6 +7,7 @@ import {
 } from "@/lib/db/queries/wallet";
 import WithdrawForm from "@/app/components/WithdrawForm";
 import CopyButton from "@/app/components/CopyButton";
+import { txUrl, addressUrl } from "@/lib/services/explorer";
 
 export const dynamic = "force-dynamic";
 
@@ -122,7 +123,14 @@ export default async function Withdraw() {
                         ${parseFloat(req.amount).toFixed(2)} {req.currency}
                       </p>
                       <p className="mt-0.5 flex items-center font-mono text-xs text-zinc-500">
-                        <span>To: {req.destinationAddress.slice(0, 10)}...{req.destinationAddress.slice(-6)}</span>
+                        <a
+                          href={addressUrl(req.destinationAddress)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-gold transition-colors"
+                        >
+                          To: {req.destinationAddress.slice(0, 10)}...{req.destinationAddress.slice(-6)}
+                        </a>
                         <CopyButton text={req.destinationAddress} />
                       </p>
                     </div>
@@ -147,7 +155,14 @@ export default async function Withdraw() {
                   </div>
                   {req.payoutTxHash && (
                     <p className="mt-1 flex items-center font-mono text-xs text-zinc-500">
-                      <span>Tx: {req.payoutTxHash.slice(0, 14)}...{req.payoutTxHash.slice(-8)}</span>
+                      <a
+                        href={txUrl(req.payoutTxHash)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-gold transition-colors"
+                      >
+                        Tx: {req.payoutTxHash.slice(0, 14)}...{req.payoutTxHash.slice(-8)}
+                      </a>
                       <CopyButton text={req.payoutTxHash} />
                     </p>
                   )}

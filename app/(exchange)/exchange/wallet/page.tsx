@@ -9,6 +9,7 @@ import {
 } from "@/lib/db/queries/wallet";
 import Link from "next/link";
 import CopyButton from "@/app/components/CopyButton";
+import { txUrl, addressUrl } from "@/lib/services/explorer";
 
 export const dynamic = "force-dynamic";
 
@@ -102,7 +103,17 @@ export default async function Wallet() {
             <div className="space-y-2">
               {recentClaims.map((claim) => (
                 <div key={claim.id} className="rounded-lg border border-border px-3 py-2 text-xs">
-                  <p className="font-mono text-zinc-300">{claim.txHash.slice(0, 12)}...{claim.txHash.slice(-8)}</p>
+                  <p className="flex items-center font-mono text-zinc-300">
+                    <a
+                      href={txUrl(claim.txHash)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-gold transition-colors"
+                    >
+                      {claim.txHash.slice(0, 12)}...{claim.txHash.slice(-8)}
+                    </a>
+                    <CopyButton text={claim.txHash} />
+                  </p>
                   <p className="text-zinc-500">
                     {claim.currency} • {claim.status} • {claim.confirmations} conf
                   </p>
@@ -142,12 +153,26 @@ export default async function Wallet() {
                       </span>
                     </div>
                     <p className="flex items-center text-zinc-500">
-                      <span>To: {request.destinationAddress.slice(0, 10)}...{request.destinationAddress.slice(-6)}</span>
+                      <a
+                        href={addressUrl(request.destinationAddress)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-gold transition-colors"
+                      >
+                        To: {request.destinationAddress.slice(0, 10)}...{request.destinationAddress.slice(-6)}
+                      </a>
                       <CopyButton text={request.destinationAddress} />
                     </p>
                     {request.payoutTxHash && (
                       <p className="mt-0.5 flex items-center font-mono text-zinc-500">
-                        <span>Tx: {request.payoutTxHash.slice(0, 14)}...{request.payoutTxHash.slice(-8)}</span>
+                        <a
+                          href={txUrl(request.payoutTxHash)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-gold transition-colors"
+                        >
+                          Tx: {request.payoutTxHash.slice(0, 14)}...{request.payoutTxHash.slice(-8)}
+                        </a>
                         <CopyButton text={request.payoutTxHash} />
                       </p>
                     )}
