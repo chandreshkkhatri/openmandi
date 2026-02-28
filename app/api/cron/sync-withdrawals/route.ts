@@ -5,6 +5,7 @@ import { transactions, wallets, withdrawalRequests } from "@/lib/db/schema";
 import {
   broadcastWithdrawalViaWebhook,
   parseTokenAmount,
+  sendErc20Transfer,
   verifyErc20TransferInTx,
 } from "@/lib/services/onchain";
 
@@ -100,6 +101,7 @@ export async function GET(request: NextRequest) {
 
     const broadcasterUrl = process.env.WITHDRAWAL_BROADCAST_URL;
     const broadcasterToken = process.env.WITHDRAWAL_BROADCAST_TOKEN;
+    const hotWalletKey = process.env.HOT_WALLET_PRIVATE_KEY;
 
     const pending = await db
       .select()
@@ -122,39 +124,81 @@ export async function GET(request: NextRequest) {
     let skippedBroadcast = 0;
 
     for (const req of pending) {
-      if (!broadcasterUrl) {
-        skippedBroadcast++;
+      const currency = req.currency as "USDC";
+      const config = CURRENCY_CONFIG[currency];
+      if (!config) {
+        await rejectAndReleaseHold({
+          requestId: req.id,
+          reason: `Unsupported currency ${req.currency}`,
+        });
+        rejected++;
         continue;
       }
 
+      let txHash: string | null = null;
+
       try {
-        const { txHash } = await broadcastWithdrawalViaWebhook({
-          endpoint: broadcasterUrl,
-          authToken: broadcasterToken,
-          body: {
-            requestId: req.id,
-            currency: req.currency,
-            network: req.network,
-            destinationAddress: req.destinationAddress,
-            amount: req.amount,
-          },
-        });
-
-        await db
-          .update(withdrawalRequests)
-          .set({
-            status: "processing",
-            payoutTxHash: txHash,
-            processedAt: new Date(),
-            rejectionReason: null,
-            updatedAt: new Date(),
-          })
-          .where(and(eq(withdrawalRequests.id, req.id), eq(withdrawalRequests.status, "pending")));
-
-        submittedToChain++;
-      } catch {
+        if (broadcasterUrl) {
+          // Mode 1: External broadcaster webhook
+          const result = await broadcastWithdrawalViaWebhook({
+            endpoint: broadcasterUrl,
+            authToken: broadcasterToken,
+            body: {
+              requestId: req.id,
+              currency: req.currency,
+              network: req.network,
+              destinationAddress: req.destinationAddress,
+              amount: req.amount,
+            },
+          });
+          txHash = result.txHash;
+        } else if (hotWalletKey) {
+          // Mode 2: Direct on-chain transfer from hot wallet
+          const amountRaw = parseTokenAmount(req.amount, config.tokenDecimals);
+          const result = await sendErc20Transfer({
+            rpcUrl,
+            privateKey: hotWalletKey,
+            tokenContract: config.tokenContract,
+            toAddress: req.destinationAddress,
+            amountRaw,
+          });
+          txHash = result.txHash;
+        } else {
+          // No broadcast method configured
+          skippedBroadcast++;
+          continue;
+        }
+      } catch (err) {
+        console.error(
+          `[sync-withdrawals] Failed to broadcast ${req.id}:`,
+          err instanceof Error ? err.message : err
+        );
         stillPending++;
+        continue;
       }
+
+      if (!txHash) {
+        stillPending++;
+        continue;
+      }
+
+      await db
+        .update(withdrawalRequests)
+        .set({
+          status: "processing",
+          payoutTxHash: txHash,
+          processedAt: new Date(),
+          rejectionReason: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(withdrawalRequests.id, req.id),
+            eq(withdrawalRequests.status, "pending")
+          )
+        );
+
+      submittedToChain++;
     }
 
     const allProcessing = processing.concat(

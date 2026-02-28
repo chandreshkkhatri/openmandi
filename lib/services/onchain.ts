@@ -308,6 +308,32 @@ export async function verifyErc20TransferInTx(params: {
   };
 }
 
+/**
+ * Send an ERC-20 transfer directly from a hot wallet using ethers.js.
+ * Requires HOT_WALLET_PRIVATE_KEY env var.
+ */
+export async function sendErc20Transfer(params: {
+  rpcUrl: string;
+  privateKey: string;
+  tokenContract: string;
+  toAddress: string;
+  amountRaw: bigint;
+}): Promise<{ txHash: string }> {
+  const { ethers } = await import("ethers");
+
+  const provider = new ethers.JsonRpcProvider(params.rpcUrl);
+  const wallet = new ethers.Wallet(params.privateKey, provider);
+
+  const erc20Abi = ["function transfer(address to, uint256 amount) returns (bool)"];
+  const contract = new ethers.Contract(params.tokenContract, erc20Abi, wallet);
+
+  const tx = await contract.transfer(params.toAddress, params.amountRaw);
+  const receipt = await tx.wait(1); // wait for 1 confirmation
+
+  const txHash = (receipt?.hash ?? tx.hash).toLowerCase();
+  return { txHash };
+}
+
 export async function broadcastWithdrawalViaWebhook(params: {
   endpoint: string;
   authToken?: string;
