@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { wallets, transactions, depositClaims, withdrawalRequests } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, inArray, sql } from "drizzle-orm";
 
 export async function getUserWallets(userId: string) {
   const userWallets = await db
@@ -45,4 +45,23 @@ export async function getRecentWithdrawalRequests(userId: string, limit: number 
     .where(eq(withdrawalRequests.userId, userId))
     .orderBy(desc(withdrawalRequests.createdAt))
     .limit(limit);
+}
+
+export async function getPendingWithdrawalTotal(userId: string) {
+  const [result] = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${withdrawalRequests.totalDebit}), 0)`,
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(withdrawalRequests)
+    .where(
+      and(
+        eq(withdrawalRequests.userId, userId),
+        inArray(withdrawalRequests.status, ["pending", "processing"])
+      )
+    );
+  return {
+    totalLocked: parseFloat(result.total),
+    count: result.count,
+  };
 }
