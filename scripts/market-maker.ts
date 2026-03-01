@@ -26,7 +26,8 @@ import {
     decimal,
     unique,
 } from "drizzle-orm/pg-core";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gt, or } from "drizzle-orm";
+import { createHmac } from "crypto";
 
 import { matchOrder, settleFuturesTrade } from "../lib/services/matching";
 import { calculateInitialMargin } from "../lib/services/margin";
@@ -43,6 +44,15 @@ const DATABASE_URL: string = process.env.OPENMANDI_DATABASE_URL || process.env.P
 // ─── CLI args ────────────────────────────────────────────────────────────────
 const TAG =
     process.argv.find((a) => a.startsWith("--tag="))?.split("=")[1] ?? "local";
+const DRY_RUN_HEDGE = process.argv.includes("--dry-run-hedge");
+const TESTNET       = process.argv.includes("--testnet");
+
+// ─── Binance hedge credentials ────────────────────────────────────────────────
+const BINANCE_API_KEY    = process.env.BINANCE_API_KEY ?? "";
+const BINANCE_API_SECRET = process.env.BINANCE_API_SECRET ?? "";
+const BINANCE_FUTURES_BASE = TESTNET
+    ? "https://testnet.binancefuture.com"
+    : "https://fapi.binance.com";
 
 // ─── Inline schema (no @/ imports — portable) ───────────────────────────────
 const users = pgTable("users", {
@@ -145,7 +155,178 @@ type PairConfig = (typeof PAIR_CONFIG)[keyof typeof PAIR_CONFIG];
 
 const SYSTEM_EMAIL = `system_mm_${TAG}@openmandi.com`;
 
-// ─── Binance API ─────────────────────────────────────────────────────────────
+// ─── Hedge configuration ─────────────────────────────────────────────────────
+const HEDGE_PAIR_MAP: Record<string, {
+    binanceSymbol: string;
+    contractSize: number;  // oz per contract on our exchange
+    qtyPrecision: number;  // Binance qty decimal places
+    minNotional: number;   // USD minimum notional per Binance order
+}> = {
+    "XAU-PERP": { binanceSymbol: "XAUUSDT", contractSize: 0.001, qtyPrecision: 2, minNotional: 5 },
+    "XAG-PERP": { binanceSymbol: "XAGUSDT", contractSize: 0.1,   qtyPrecision: 1, minNotional: 5 },
+};
+
+// Flush accumulated exposure every N MM ticks (60 × 5s = 5 min)
+const HEDGE_FLUSH_EVERY = 60;
+
+// Tracks the last hedge time so we only query new trades since then.
+// Initialized to "now" on startup — we don't hedge historical trades.
+let lastHedgeTime: Date = new Date();
+
+// Residual unhedged oz per pair (carried over when below min notional)
+const residualHedgeOz: Record<string, number> = {};
+
+// Last known mid-prices per pair, updated each tick for notional estimation
+const lastHedgePrices: Record<string, number> = {};
+
+// ─── Binance Futures helpers (hedging) ──────────────────────────────────────
+
+function signBinanceQuery(query: string): string {
+    return createHmac("sha256", BINANCE_API_SECRET).update(query).digest("hex");
+}
+
+async function placeBinanceFuturesMarketOrder(
+    symbol: string,
+    side: "BUY" | "SELL",
+    quantity: string
+): Promise<{ orderId: number; avgPrice: string }> {
+    const params = new URLSearchParams({
+        symbol, side, type: "MARKET", quantity,
+        timestamp: Date.now().toString(),
+        recvWindow: "5000",
+    });
+    const signature = signBinanceQuery(params.toString());
+    params.append("signature", signature);
+    const res = await fetch(`${BINANCE_FUTURES_BASE}/fapi/v1/order?${params}`, {
+        method: "POST",
+        headers: { "X-MBX-APIKEY": BINANCE_API_KEY },
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(`Binance Futures error: ${JSON.stringify(body)}`);
+    return body as { orderId: number; avgPrice: string };
+}
+
+// ─── Hedge: DB-based flush ────────────────────────────────────────────────────
+
+/**
+ * Query the trades table for all fills involving the MM since lastHedgeTime,
+ * aggregate net oz exposure per pair, and place hedge orders on Binance.
+ *
+ * This catches ALL fills — whether the MM was taker (order placed by this script)
+ * or maker (user's order filled against a resting MM order via the web API).
+ *
+ * Sub-minimum-notional amounts are carried in residualHedgeOz for the next flush.
+ * Failed Binance orders also carry over.
+ */
+async function flushHedge(mmUserId: string) {
+    const flushStart = new Date();
+
+    // 1. Query all trades involving the MM since last hedge
+    const recentTrades = await db
+        .select()
+        .from(tradesTable)
+        .where(
+            and(
+                gt(tradesTable.createdAt, lastHedgeTime),
+                or(
+                    eq(tradesTable.makerUserId, mmUserId),
+                    eq(tradesTable.takerUserId, mmUserId)
+                )
+            )
+        );
+
+    // 2. Aggregate net oz per pair
+    //    For each trade, determine the MM's side by looking up the relevant order.
+    const exposureByPair: Record<string, number> = {};
+
+    // Start with any residual from previous flush
+    for (const [pair, oz] of Object.entries(residualHedgeOz)) {
+        if (Math.abs(oz) > 1e-8) exposureByPair[pair] = oz;
+    }
+
+    for (const trade of recentTrades) {
+        const cfg = HEDGE_PAIR_MAP[trade.pair];
+        if (!cfg) continue; // skip non-hedgeable pairs (e.g. USDT-USDC)
+
+        const contracts = parseFloat(trade.quantity);
+        const oz = contracts * cfg.contractSize;
+
+        // Look up the maker order to determine sides
+        const [makerOrder] = await db
+            .select({ side: orders.side })
+            .from(orders)
+            .where(eq(orders.id, trade.makerOrderId));
+
+        if (!makerOrder) continue;
+
+        const isSystemMaker = trade.makerUserId === mmUserId;
+        let mmSide: "buy" | "sell";
+        if (isSystemMaker) {
+            mmSide = makerOrder.side as "buy" | "sell";
+        } else {
+            // MM is taker → opposite side of the maker
+            mmSide = makerOrder.side === "buy" ? "sell" : "buy";
+        }
+
+        if (!exposureByPair[trade.pair]) exposureByPair[trade.pair] = 0;
+        // MM bought → long → needs to SELL on Binance (positive)
+        // MM sold  → short → needs to BUY  on Binance (negative)
+        exposureByPair[trade.pair] += mmSide === "buy" ? oz : -oz;
+    }
+
+    // 3. Place hedge orders
+    const pairsToHedge = Object.entries(exposureByPair).filter(([, oz]) => Math.abs(oz) > 1e-8);
+    if (pairsToHedge.length === 0 && recentTrades.length === 0) {
+        lastHedgeTime = flushStart;
+        return;
+    }
+
+    if (pairsToHedge.length > 0) {
+        console.log(`\n[HEDGE] Flushing ${recentTrades.length} trade(s) since ${lastHedgeTime.toISOString().slice(11, 19)}...`);
+    }
+
+    for (const [pair, netOz] of pairsToHedge) {
+        const cfg = HEDGE_PAIR_MAP[pair];
+        if (!cfg) continue;
+
+        const side = netOz > 0 ? "SELL" : "BUY";
+        const absOz = Math.abs(netOz);
+        const qty = absOz.toFixed(cfg.qtyPrecision);
+        const midPrice = lastHedgePrices[pair] ?? 0;
+        const notional = absOz * midPrice;
+
+        if (notional < cfg.minNotional) {
+            console.log(`[HEDGE] ${pair}: carrying over ${side} ${qty} ${cfg.binanceSymbol} (notional $${notional.toFixed(2)} < min $${cfg.minNotional})`);
+            residualHedgeOz[pair] = netOz; // carry over
+            continue;
+        }
+
+        if (DRY_RUN_HEDGE) {
+            console.log(`[HEDGE DRY RUN] Would ${side} ${qty} ${cfg.binanceSymbol} (~$${notional.toFixed(2)})`);
+            residualHedgeOz[pair] = 0;
+            continue;
+        }
+
+        if (!BINANCE_API_KEY || !BINANCE_API_SECRET) {
+            console.warn(`[HEDGE] ${pair}: skipped — BINANCE_API_KEY/SECRET not set`);
+            continue;
+        }
+
+        try {
+            const result = await placeBinanceFuturesMarketOrder(cfg.binanceSymbol, side, qty);
+            console.log(`[HEDGE] ✅ ${side} ${qty} ${cfg.binanceSymbol} → orderId: ${result.orderId}, avgPrice: ${result.avgPrice}`);
+            residualHedgeOz[pair] = 0;
+        } catch (err) {
+            console.error(`[HEDGE] ❌ ${pair} failed (will retry next flush): ${err instanceof Error ? err.message : err}`);
+            residualHedgeOz[pair] = netOz; // carry over failed amount
+        }
+    }
+
+    // 4. Advance the hedge watermark
+    lastHedgeTime = flushStart;
+}
+
+// ─── Binance API ────────────────────────────────────────────────────────────────────
 const BINANCE_FUTURES_BOOK_TICKER_API = "https://fapi.binance.com/fapi/v1/ticker/bookTicker";
 async function getBinancePrice(symbol: string) {
     try {
@@ -259,6 +440,7 @@ async function placeMMLimitOrder(
         price,
         quantity,
       });
+
 
       // 4. Settle Fills
       for (const fill of matchResult.fills) {
@@ -575,6 +757,9 @@ async function tick(userId: string) {
         "XAU-PERP": xau.mid,
         "XAG-PERP": xag.mid,
     };
+    // Keep hedge prices current for notional estimation during flush
+    lastHedgePrices["XAU-PERP"] = xau.mid;
+    lastHedgePrices["XAG-PERP"] = xag.mid;
 
     // 2. Build desired grid for all pairs
     const allDesired: DesiredLevel[] = [];
@@ -634,18 +819,25 @@ async function tick(userId: string) {
         `kept ${totalKept} | placed ${totalPlaced} | cancelled ${totalCancelled} | ` +
         `XAU ${xau.mid.toFixed(2)} | XAG ${xag.mid.toFixed(3)}`
     );
+
+    // Flush hedge exposure every 5 minutes
+    if (tickCount % HEDGE_FLUSH_EVERY === 0) {
+        await flushHedge(userId);
+    }
 }
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 async function main() {
     const dbHost = DATABASE_URL.match(/@([^/]+)\//)?.[1] ?? "unknown";
+    const hedgeMode = DRY_RUN_HEDGE ? "dry-run" : BINANCE_API_KEY ? (TESTNET ? "testnet" : "mainnet") : "disabled (no key)";
     console.log(`\n🤖 Open Mandi Market Maker (incremental rebalance)`);
     console.log(`   Tag:       ${TAG}`);
     console.log(`   DB Host:   ${dbHost}`);
     console.log(`   User:      ${SYSTEM_EMAIL}`);
     console.log(`   Levels:    ${LEVELS.length} per side × 2 pairs = ${LEVELS.length * 2 * 2} target orders`);
     console.log(`   Interval:  ${REFRESH_INTERVAL_MS / 1000}s`);
-    console.log(`   Threshold: XAU ${(REPRICE_THRESHOLD["XAU-PERP"] * 100).toFixed(2)}% | XAG ${(REPRICE_THRESHOLD["XAG-PERP"] * 100).toFixed(2)}%\n`);
+    console.log(`   Threshold: XAU ${(REPRICE_THRESHOLD["XAU-PERP"] * 100).toFixed(2)}% | XAG ${(REPRICE_THRESHOLD["XAG-PERP"] * 100).toFixed(2)}%`);
+    console.log(`   Hedge:     every ${HEDGE_FLUSH_EVERY * REFRESH_INTERVAL_MS / 60000} min | ${hedgeMode}\n`);
 
     const user = await ensureSystemUser();
     console.log(`   User ID:   ${user.id}`);
