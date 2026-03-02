@@ -1,10 +1,10 @@
-const markets = [
+import type { PriceData } from "@/lib/trading/types";
+
+const marketsConfig = [
   {
     symbol: "Au",
     name: "Gold Futures",
     pair: "XAU-PERP",
-    price: "$2,847.50",
-    change: "+1.24%",
     color: "gold" as const,
     tagline: "The OG safe haven. Now tradable 24/7 without the dusty vault.",
   },
@@ -12,14 +12,16 @@ const markets = [
     symbol: "Ag",
     name: "Silver Futures",
     pair: "XAG-PERP",
-    price: "$31.42",
-    change: "+0.87%",
     color: "silver" as const,
     tagline: "Gold's scrappy younger sibling. Highly volatile, highly fun.",
   },
 ];
 
-export default function MarketPreview() {
+export default function MarketPreview({ prices }: { prices?: PriceData }) {
+  // Use fallback dummy data if fetch fails
+  const liveGoldPrice = prices?.gold || 2847.50;
+  const liveSilverPrice = prices?.silver || 31.42;
+
   return (
     <section
       id="markets"
@@ -38,7 +40,7 @@ export default function MarketPreview() {
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
-          {markets.map((market) => (
+          {marketsConfig.map((market) => (
             <div
               key={market.symbol}
               className="group rounded-2xl border border-border bg-surface p-8 md:p-10 transition-colors hover:border-primary/30"
@@ -63,10 +65,10 @@ export default function MarketPreview() {
               <p className="mb-4 text-sm text-zinc-400">{market.tagline}</p>
               <div className="mb-6 flex items-baseline gap-3">
                 <span className="font-mono text-4xl font-bold text-white">
-                  {market.price}
+                  ${market.color === "gold" ? liveGoldPrice.toFixed(2) : liveSilverPrice.toFixed(2)}
                 </span>
                 <span className="text-sm font-semibold text-emerald-400">
-                  {market.change}
+                  Live
                 </span>
               </div>
               <div className="flex gap-4 text-xs font-medium uppercase tracking-wider text-zinc-500">

@@ -3,14 +3,17 @@ import Features from "@/app/components/Features";
 import HowItWorks from "@/app/components/HowItWorks";
 import MarketPreview from "@/app/components/MarketPreview";
 import CallToAction from "@/app/components/CallToAction";
+import { getIndexPrices } from "@/lib/services/prices";
 
-export default function Home() {
+export default async function Home() {
+  const prices = await getIndexPrices();
+
   return (
     <>
       <Hero />
       <Features />
       <HowItWorks />
-      <MarketPreview />
+      <MarketPreview prices={prices} />
       <CallToAction />
     </>
   );
