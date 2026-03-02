@@ -2,70 +2,119 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --background: #000000;
+  --background: #0a0f0a;
   --foreground: #ededed;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-gold: #F5A623;
-  --color-gold-light: #FFD700;
-  --color-silver: #C0C0C0;
-  --color-silver-light: #E8E8E8;
-  --color-surface: #111111;
-  --color-surface-light: #1a1a1a;
-  --color-border: #222222;
+  --color-primary: #8f9531;
+  --color-primary-light: #a8b038;
+  --color-gold: #f5a623;
+  --color-gold-light: #ffd700;
+  --color-silver: #c0c0c0;
+  --color-silver-light: #e8e8e8;
+  --color-surface: #121812;
+  --color-surface-light: #1a211a;
+  --color-border: #1e261e;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-/* Contextual accent color utilities for dual theming */
-.text-accent-gold { color: var(--color-gold); }
-.text-accent-gold-light { color: var(--color-gold-light); }
-.text-accent-silver { color: var(--color-silver); }
-.text-accent-silver-light { color: var(--color-silver-light); }
+/* Contextual accent color utilities for dual theming (gold/silver markets) */
+.text-accent-gold {
+  color: var(--color-gold);
+}
+.text-accent-gold-light {
+  color: var(--color-gold-light);
+}
+.text-accent-silver {
+  color: var(--color-silver);
+}
+.text-accent-silver-light {
+  color: var(--color-silver-light);
+}
 
-.bg-accent-gold { background-color: var(--color-gold); }
-.bg-accent-gold-light { background-color: var(--color-gold-light); }
-.bg-accent-silver { background-color: var(--color-silver); }
-.bg-accent-silver-light { background-color: var(--color-silver-light); }
+.bg-accent-gold {
+  background-color: var(--color-gold);
+}
+.bg-accent-gold-light {
+  background-color: var(--color-gold-light);
+}
+.bg-accent-silver {
+  background-color: var(--color-silver);
+}
+.bg-accent-silver-light {
+  background-color: var(--color-silver-light);
+}
 
-.border-accent-gold { border-color: var(--color-gold); }
-.border-accent-gold-light { border-color: var(--color-gold-light); }
-.border-accent-silver { border-color: var(--color-silver); }
-.border-accent-silver-light { border-color: var(--color-silver-light); }
+.border-accent-gold {
+  border-color: var(--color-gold);
+}
+.border-accent-gold-light {
+  border-color: var(--color-gold-light);
+}
+.border-accent-silver {
+  border-color: var(--color-silver);
+}
+.border-accent-silver-light {
+  border-color: var(--color-silver-light);
+}
 
 /* Opacity variants for backgrounds and borders */
-.bg-accent-gold\/10 { background-color: rgb(245 166 35 / 0.1); }
-.bg-accent-gold\/20 { background-color: rgb(245 166 35 / 0.2); }
-.bg-accent-silver\/10 { background-color: rgb(192 192 192 / 0.1); }
-.bg-accent-silver\/20 { background-color: rgb(192 192 192 / 0.2); }
+.bg-accent-gold\/10 {
+  background-color: rgb(245 166 35 / 0.1);
+}
+.bg-accent-gold\/20 {
+  background-color: rgb(245 166 35 / 0.2);
+}
+.bg-accent-silver\/10 {
+  background-color: rgb(192 192 192 / 0.1);
+}
+.bg-accent-silver\/20 {
+  background-color: rgb(192 192 192 / 0.2);
+}
 
-.border-accent-gold\/30 { border-color: rgb(245 166 35 / 0.3); }
-.border-accent-gold\/50 { border-color: rgb(245 166 35 / 0.5); }
-.border-accent-silver\/30 { border-color: rgb(192 192 192 / 0.3); }
-.border-accent-silver\/50 { border-color: rgb(192 192 192 / 0.5); }
+.border-accent-gold\/30 {
+  border-color: rgb(245 166 35 / 0.3);
+}
+.border-accent-gold\/50 {
+  border-color: rgb(245 166 35 / 0.5);
+}
+.border-accent-silver\/30 {
+  border-color: rgb(192 192 192 / 0.3);
+}
+.border-accent-silver\/50 {
+  border-color: rgb(192 192 192 / 0.5);
+}
 
-.focus\:border-accent-gold\/50:focus { border-color: rgb(245 166 35 / 0.5); }
-.focus\:border-accent-silver\/50:focus { border-color: rgb(192 192 192 / 0.5); }
+.focus\:border-accent-gold\/50:focus {
+  border-color: rgb(245 166 35 / 0.5);
+}
+.focus\:border-accent-silver\/50:focus {
+  border-color: rgb(192 192 192 / 0.5);
+}
 
-.hover\:bg-accent-gold-light:hover { background-color: var(--color-gold-light); }
-.hover\:bg-accent-silver-light:hover { background-color: var(--color-silver-light); }
+.hover\:bg-accent-gold-light:hover {
+  background-color: var(--color-gold-light);
+}
+.hover\:bg-accent-silver-light:hover {
+  background-color: var(--color-silver-light);
+}
 
-.hover\:border-accent-gold\/30:hover { border-color: rgb(245 166 35 / 0.3); }
-.hover\:border-accent-silver\/30:hover { border-color: rgb(192 192 192 / 0.3); }
+.hover\:border-accent-gold\/30:hover {
+  border-color: rgb(245 166 35 / 0.3);
+}
+.hover\:border-accent-silver\/30:hover {
+  border-color: rgb(192 192 192 / 0.3);
+}
 
-.accent-accent-gold { accent-color: var(--color-gold); }
-.accent-accent-silver { accent-color: var(--color-silver); }
-
-@theme {
-  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
-
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 15px rgba(245, 166, 35, 0.3); }
-    50% { box-shadow: 0 0 30px rgba(245, 166, 35, 0.6); }
-  }
+.accent-accent-gold {
+  accent-color: var(--color-gold);
+}
+.accent-accent-silver {
+  accent-color: var(--color-silver);
 }
 
 html {

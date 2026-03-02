@@ -43,7 +43,7 @@ export default async function Withdraw() {
 
       {/* Balance Summary */}
       <div className="mb-6 rounded-2xl border border-border bg-surface p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
           Balance Breakdown
         </h2>
         <dl className="space-y-2">
@@ -106,7 +106,7 @@ export default async function Withdraw() {
       {/* Recent Withdrawal Requests */}
       {recentWithdrawals.length > 0 && (
         <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
             Withdrawal History
           </h2>
           <div className="space-y-3">
@@ -127,7 +127,7 @@ export default async function Withdraw() {
                           href={addressUrl(req.destinationAddress)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-gold transition-colors"
+                          className="hover:text-primary transition-colors"
                         >
                           To: {req.destinationAddress.slice(0, 10)}...{req.destinationAddress.slice(-6)}
                         </a>
@@ -159,7 +159,7 @@ export default async function Withdraw() {
                         href={txUrl(req.payoutTxHash)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:text-gold transition-colors"
+                        className="hover:text-primary transition-colors"
                       >
                         Tx: {req.payoutTxHash.slice(0, 14)}...{req.payoutTxHash.slice(-8)}
                       </a>

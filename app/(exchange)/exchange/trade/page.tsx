@@ -27,7 +27,7 @@ export default async function TradingHub() {
       </div>
 
       <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
           Market Information
         </h2>
         <dl className="grid gap-4 sm:grid-cols-3">

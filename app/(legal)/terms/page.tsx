@@ -1,6 +1,6 @@
 export default function TermsAndConditions() {
   return (
-    <article className="prose prose-invert max-w-none prose-headings:text-white prose-a:text-gold hover:prose-a:text-gold-light">
+    <article className="prose prose-invert max-w-none prose-headings:text-white prose-a:text-primary hover:prose-a:text-primary-light">
       <h1>Terms &amp; Conditions</h1>
       <p className="lead">
         Last updated: February 2026

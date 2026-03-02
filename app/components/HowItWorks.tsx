@@ -1,27 +1,27 @@
 const steps = [
   {
     number: "01",
-    title: "Create Your Account",
+    title: "Walk In",
     description:
-      "Sign up with Google in seconds. No crypto wallet needed — just a Google account to get started.",
+      "One-click Google login. No KYC selfies, no uploading utility bills from 2004. You're instantaneously in.",
   },
   {
     number: "02",
-    title: "Fund Your Account",
+    title: "Bring Your Wallet",
     description:
-      "Deposit USDC to your trading wallet. Quick, simple, and ready to trade in minutes.",
+      "Drop some USDC into your account. It takes precisely as long as the blockchain does.",
   },
   {
     number: "03",
-    title: "Choose Your Market",
+    title: "Pick Your Fighter",
     description:
-      "Go long and short on gold and silver perpetual futures with up to 50x leverage.",
+      "Gold for the purists. Silver for the thrill-seekers. Crank up the leverage if you're feeling spicy.",
   },
   {
     number: "04",
-    title: "Start Trading",
+    title: "Make Your Move",
     description:
-      "Place market or limit orders with real-time matching. Provide liquidity and earn zero maker fees.",
+      "Long it, short it, or provide liquidity. The market is yours for the taking.",
   },
 ];
 
@@ -33,17 +33,17 @@ export default function HowItWorks() {
     >
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-16 text-center">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
-            Getting Started
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+            Speedrun Setup
           </p>
           <h2 className="text-3xl font-bold text-white md:text-5xl">
-            How It Works
+            Four Steps to Glory
           </h2>
         </div>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step) => (
             <div key={step.number} className="text-center">
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border-2 border-gold font-mono text-xl font-bold text-gold">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border-2 border-primary font-mono text-xl font-bold text-primary">
                 {step.number}
               </div>
               <h3 className="mb-2 text-lg font-semibold text-white">

@@ -25,7 +25,7 @@ export default async function Settings() {
       <div className="space-y-6">
         {/* Account Info */}
         <div className="rounded-2xl border border-border bg-surface p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
             Account
           </h2>
           <dl className="space-y-3">
@@ -54,7 +54,7 @@ export default async function Settings() {
 
         {/* Wallet Balances */}
         <div className="rounded-2xl border border-border bg-surface p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
             Wallets
           </h2>
           <dl className="space-y-3">

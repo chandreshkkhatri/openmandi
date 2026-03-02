@@ -1,63 +1,62 @@
 const features = [
   {
     icon: "\u26A1",
-    title: "Lightning-Fast Settlement",
+    title: "Skip the Middleman",
     description:
-      "Crypto-native settlement eliminates traditional T+2 delays. Your futures contracts settle in minutes, not days.",
+      "T+2 settlement? Try T+2 seconds. Your trades settle instantly on-chain because waiting is for traditional finance.",
   },
   {
     icon: "🪙",
-    title: "USDC-Native Collateral",
+    title: "One Coin to Rule Them",
     description:
-      "Trade gold and silver perpetual futures with USDC as the single collateral and settlement asset.",
+      "Your USDC is all you need. Deposit, take massive leverage on gold, and withdraw your profits. Simple as that.",
   },
   {
     icon: "\uD83D\uDEE1\uFE0F",
-    title: "Secure by Design",
+    title: "Your Keys, Your Metals",
     description:
-      "Server-side session verification, authenticated API routes, and secure credential handling protect your account and assets.",
+      "We keep the bad actors out with server-side auth, but we don't hold your funds captive. Secure, fast, and yours.",
   },
   {
-    icon: "\uD83D\uDCCA",
-    title: "Real-Time Price Discovery",
+    icon: "\uD83C\uDFAF",
+    title: "No Made-Up Numbers",
     description:
-      "Live gold and silver spot prices feed directly into our futures engine, ensuring accurate and fair market pricing.",
+      "Live spot prices stream straight from the real world into our matching engine. If gold moves in London, you see it here immediately.",
   },
   {
     icon: "\uD83C\uDF10",
-    title: "Global Access",
+    title: "The Bazaar is Always Open",
     description:
-      "Trade from anywhere in the world. No geographic restrictions, no banking intermediaries, no barriers to entry.",
+      "Got Wi-Fi? You're in. Trade from anywhere, anytime, without needing a bank's permission.",
   },
   {
     icon: "\uD83D\uDCB0",
-    title: "Low Fees, High Leverage",
+    title: "The House Doesn't Always Win",
     description:
-      "Competitive fee structure with flexible leverage options. Keep more of your profits with minimized trading costs.",
+      "Provide liquidity and you pay absolutely zero fees. Taking a market order? Just a tiny 0.05% fee.",
   },
 ];
 
 export default function Features() {
   return (
-    <section id="features" className="scroll-mt-20 border-t border-border bg-black py-24">
+    <section id="features" className="scroll-mt-20 border-t border-border bg-background py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-16 text-center">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
-            Why Open Mandi
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+            The Good Stuff
           </p>
           <h2 className="text-3xl font-bold text-white md:text-5xl">
-            Built for the Modern Trader
+            Why you&apos;ll actually like it here
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-zinc-400">
-            Combining the stability of precious metals with the innovation of
-            cryptocurrency.
+            We combined the unshakeable stability of precious metals with the degenerate speed of crypto.
           </p>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="rounded-2xl border border-border bg-surface p-8 transition-colors hover:border-gold/30 hover:bg-surface-light"
+              className="rounded-2xl border border-border bg-surface p-8 transition-colors hover:border-primary/30 hover:bg-surface-light"
             >
               <div className="mb-4 text-3xl">{feature.icon}</div>
               <h3 className="mb-2 text-lg font-semibold text-white">

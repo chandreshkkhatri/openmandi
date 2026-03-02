@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-black/80 backdrop-blur-md">
@@ -6,7 +8,7 @@ export default function Navbar() {
           href="#"
           className="flex items-center gap-2 text-xl font-bold text-white"
         >
-          <span className="text-gold">{"\u25C6"}</span>
+          <Image src="/logo.svg" alt="Open Mandi" width={36} height={36} className="h-9 w-auto" />
           Open Mandi
         </a>
 
@@ -37,7 +39,7 @@ export default function Navbar() {
           </a>
           <a
             href="/exchange/dashboard"
-            className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-black transition-colors hover:bg-gold-light"
+            className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
           >
             Launch App
           </a>

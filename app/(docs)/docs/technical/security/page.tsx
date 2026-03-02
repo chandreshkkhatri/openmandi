@@ -1,7 +1,7 @@
 export default function Security() {
   return (
-    <article className="prose prose-invert max-w-none prose-headings:text-white prose-a:text-gold hover:prose-a:text-gold-light">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+    <article className="prose prose-invert max-w-none prose-headings:text-white prose-a:text-primary hover:prose-a:text-primary-light">
+      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
         Technical Documentation
       </p>
       <h1>Security Model</h1>

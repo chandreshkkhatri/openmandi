@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -25,7 +26,7 @@ export default function AppNavbar({ email }: { email: string }) {
             href="/"
             className="flex items-center gap-2 text-lg font-bold text-white"
           >
-            <span className="text-gold">{"\u25C6"}</span>
+            <Image src="/logo.svg" alt="Open Mandi" width={32} height={32} className="h-8 w-auto" />
             Open Mandi
           </Link>
           <span className="text-zinc-700">|</span>
@@ -46,7 +47,7 @@ export default function AppNavbar({ email }: { email: string }) {
             {loggingOut ? "Logging out..." : "Log Out"}
           </button>
           <div
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-gold/20 text-xs font-semibold text-gold"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary"
             title={email}
           >
             {initial}

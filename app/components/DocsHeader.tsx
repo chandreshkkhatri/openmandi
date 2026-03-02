@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function DocsHeader() {
@@ -9,7 +10,7 @@ export default function DocsHeader() {
             href="/"
             className="flex items-center gap-2 text-lg font-bold text-white"
           >
-            <span className="text-gold">{"\u25C6"}</span>
+            <Image src="/logo.svg" alt="Open Mandi" width={32} height={32} className="h-8 w-auto" />
             Open Mandi
           </Link>
           <span className="text-zinc-700">|</span>
@@ -19,7 +20,7 @@ export default function DocsHeader() {
         </div>
         <Link
           href="/exchange/dashboard"
-          className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-black transition-colors hover:bg-gold-light"
+          className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-light"
         >
           Launch App
         </Link>

@@ -39,7 +39,7 @@ export default function TechnicalDocsSidebar() {
                   href={link.href}
                   className={`block rounded-lg px-3 py-1.5 text-sm transition-colors ${
                     pathname === link.href
-                      ? "bg-gold/10 font-medium text-gold"
+                      ? "bg-primary/10 font-medium text-primary"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >

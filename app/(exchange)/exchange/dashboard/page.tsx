@@ -65,8 +65,8 @@ export default async function Dashboard() {
       </p>
 
       {/* Total Balance Hero */}
-      <div className="mb-8 rounded-2xl border border-gold/20 bg-surface p-8 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+      <div className="mb-8 rounded-2xl border border-primary/20 bg-surface p-8 text-center">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
           Total Account Value
         </p>
         <p className="mt-2 font-mono text-4xl font-bold text-white">
@@ -95,7 +95,7 @@ export default async function Dashboard() {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-surface p-4 text-center">
           <p className="text-xs text-zinc-500">Gold (XAU)</p>
-          <p className="mt-1 font-mono text-lg font-semibold text-gold">
+          <p className="mt-1 font-mono text-lg font-semibold text-primary">
             ${prices.gold.toFixed(2)}
           </p>
         </div>
@@ -126,18 +126,18 @@ export default async function Dashboard() {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         <Link
           href="/exchange/deposit"
-          className="rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-gold/30"
+          className="rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-primary/30"
         >
-          <p className="text-sm font-semibold text-gold">Deposit</p>
+          <p className="text-sm font-semibold text-primary">Deposit</p>
           <p className="mt-1 text-xs text-zinc-500">
             {canDeposit ? "Add funds to your account" : "Balance must be < $5"}
           </p>
         </Link>
         <Link
           href="/exchange/withdraw"
-          className="rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-gold/30"
+          className="rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-primary/30"
         >
-          <p className="text-sm font-semibold text-gold">Withdraw</p>
+          <p className="text-sm font-semibold text-primary">Withdraw</p>
           <p className="mt-1 text-xs text-zinc-500">
             {canWithdraw
               ? "Withdraw available funds"
@@ -146,9 +146,9 @@ export default async function Dashboard() {
         </Link>
         <Link
           href="/exchange/trade/gold"
-          className="rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-gold/30"
+          className="rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-primary/30"
         >
-          <p className="text-sm font-semibold text-gold">Trade</p>
+          <p className="text-sm font-semibold text-primary">Trade</p>
           <p className="mt-1 text-xs text-zinc-500">Gold & silver futures</p>
         </Link>
       </div>
@@ -156,12 +156,12 @@ export default async function Dashboard() {
       {/* Recent Activity */}
       <div className="rounded-2xl border border-border bg-surface p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
             Recent Activity
           </h2>
           <Link
             href="/exchange/wallet"
-            className="text-xs text-zinc-500 transition-colors hover:text-gold"
+            className="text-xs text-zinc-500 transition-colors hover:text-primary"
           >
             View all &rarr;
           </Link>

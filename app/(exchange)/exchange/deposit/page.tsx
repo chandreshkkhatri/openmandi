@@ -20,7 +20,7 @@ export default async function Deposit() {
 
       {/* Balance Summary */}
       <div className="mb-6 rounded-2xl border border-border bg-surface p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
           Current Balances
         </h2>
         <dl className="space-y-2">

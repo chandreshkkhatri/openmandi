@@ -68,8 +68,8 @@ export default async function Wallet() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-gold/20 bg-surface p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+        <div className="rounded-2xl border border-primary/20 bg-surface p-6">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
             Total Balance
           </h2>
           <p className="font-mono text-2xl text-white">
@@ -78,7 +78,7 @@ export default async function Wallet() {
           <div className="mt-4 flex gap-2">
             <Link
               href="/exchange/deposit"
-              className="rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-black transition-opacity hover:opacity-90"
+              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
               Deposit
             </Link>
@@ -94,7 +94,7 @@ export default async function Wallet() {
 
       <div className="mb-8 grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-surface p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
             Deposit Claims
           </h2>
           {recentClaims.length === 0 ? (
@@ -108,7 +108,7 @@ export default async function Wallet() {
                       href={txUrl(claim.txHash)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-gold transition-colors"
+                      className="hover:text-primary transition-colors"
                     >
                       {claim.txHash.slice(0, 12)}...{claim.txHash.slice(-8)}
                     </a>
@@ -124,7 +124,7 @@ export default async function Wallet() {
         </div>
 
         <div className="rounded-2xl border border-border bg-surface p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
             Withdrawal Requests
           </h2>
           {recentWithdrawals.length === 0 ? (
@@ -157,7 +157,7 @@ export default async function Wallet() {
                         href={addressUrl(request.destinationAddress)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:text-gold transition-colors"
+                        className="hover:text-primary transition-colors"
                       >
                         To: {request.destinationAddress.slice(0, 10)}...{request.destinationAddress.slice(-6)}
                       </a>
@@ -169,7 +169,7 @@ export default async function Wallet() {
                           href={txUrl(request.payoutTxHash)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-gold transition-colors"
+                          className="hover:text-primary transition-colors"
                         >
                           Tx: {request.payoutTxHash.slice(0, 14)}...{request.payoutTxHash.slice(-8)}
                         </a>
@@ -186,7 +186,7 @@ export default async function Wallet() {
 
       {/* Transaction History */}
       <div className="rounded-2xl border border-border bg-surface p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
           Transaction History
         </h2>
         {recentTxns.length === 0 ? (

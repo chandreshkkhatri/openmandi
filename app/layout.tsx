@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Open Mandi | Crypto-Powered Gold & Silver Futures Exchange",
+  title: "Open Mandi | Trade Gold & Silver with Crypto",
   description:
-    "Trade gold and silver futures using cryptocurrency. Open Mandi is a next-generation commodities exchange bridging digital assets and precious metals markets.",
+    "Open Mandi is where crypto meets commodities. Trade gold and silver futures with USDC — no bank account needed, no paperwork, no waiting around.",
   keywords: [
     "cryptocurrency",
     "gold futures",
@@ -25,11 +25,16 @@ export const metadata: Metadata = {
     "precious metals",
     "digital assets",
   ],
+  icons: {
+    icon: "/logo.svg",
+    apple: "/logo.svg",
+  },
   openGraph: {
-    title: "Open Mandi | Crypto-Powered Gold & Silver Futures Exchange",
+    title: "Open Mandi | Trade Gold & Silver with Crypto",
     description:
-      "Trade gold and silver futures using cryptocurrency. A next-generation commodities exchange bridging digital assets and precious metals.",
+      "Open Mandi is where crypto meets commodities. Trade gold and silver futures with USDC — no bank account needed.",
     type: "website",
+    images: ["/logo.svg"],
   },
 };
 

@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export default function DepositsWithdrawals() {
   return (
-    <article className="prose prose-invert max-w-none prose-headings:text-white prose-a:text-gold hover:prose-a:text-gold-light">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+    <article className="prose prose-invert max-w-none prose-headings:text-white prose-a:text-primary hover:prose-a:text-primary-light">
+      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
         Using the Exchange
       </p>
       <h1>Deposits &amp; Withdrawals</h1>

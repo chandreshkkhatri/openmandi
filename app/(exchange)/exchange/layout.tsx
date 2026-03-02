@@ -15,7 +15,7 @@ export default async function ExchangeLayout({
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       <AppNavbar email={user.email} />
       <div className="flex">
         <AppSidebar />

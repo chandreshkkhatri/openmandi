@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -38,10 +39,11 @@ export default function DocsSidebar() {
     <aside className="w-64 shrink-0 border-r border-border bg-surface">
       <div className="sticky top-0 h-screen overflow-y-auto p-6">
         <Link
-          href="/docs"
-          className="mb-6 block text-lg font-bold text-white"
+          href="/"
+          className="mb-6 flex items-center gap-2 text-lg font-bold text-white"
         >
-          {"\u25C6"} Docs
+          <Image src="/logo.svg" alt="Open Mandi" width={32} height={32} className="h-8 w-auto" />
+          Open Mandi
         </Link>
         <nav className="flex flex-col gap-6">
           {sections.map((section) => (
@@ -56,7 +58,7 @@ export default function DocsSidebar() {
                       href={link.href}
                       className={`block rounded-lg px-3 py-1.5 text-sm transition-colors ${
                         pathname === link.href
-                          ? "bg-gold/10 font-medium text-gold"
+                          ? "bg-primary/10 font-medium text-primary"
                           : "text-zinc-400 hover:text-white"
                       }`}
                     >

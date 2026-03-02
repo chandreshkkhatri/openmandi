@@ -47,7 +47,7 @@ const topics = [
 export default function TechnicalDocsHub() {
   return (
     <div>
-      <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+      <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
         Technical Documentation
       </p>
       <h1 className="mb-4 text-4xl font-bold text-white">
@@ -65,9 +65,9 @@ export default function TechnicalDocsHub() {
           <Link
             key={topic.href}
             href={topic.href}
-            className="group rounded-xl border border-border bg-surface p-6 transition-colors hover:border-gold/30 hover:bg-surface-light"
+            className="group rounded-xl border border-border bg-surface p-6 transition-colors hover:border-primary/30 hover:bg-surface-light"
           >
-            <h2 className="mb-2 text-lg font-semibold text-white group-hover:text-gold">
+            <h2 className="mb-2 text-lg font-semibold text-white group-hover:text-primary">
               {topic.title}
             </h2>
             <p className="text-sm text-zinc-400">{topic.description}</p>
