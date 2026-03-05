@@ -12,7 +12,7 @@ export default function Hero() {
           Trade Grandpa&apos;s Shiny Rocks.
           <br />
           <span className="bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
-            At Web3 Speed.
+            Lightning Fast.
           </span>
         </h1>
 

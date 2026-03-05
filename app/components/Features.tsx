@@ -3,7 +3,7 @@ const features = [
     icon: "\u26A1",
     title: "Skip the Middleman",
     description:
-      "T+2 settlement? Try T+2 seconds. Your trades settle instantly on-chain because waiting is for traditional finance.",
+      "T+2 settlement? Try T+2 seconds. Your trades settle instantly on our high-performance matching engine.",
   },
   {
     icon: "🪙",

@@ -9,7 +9,7 @@ const steps = [
     number: "02",
     title: "Bring Your Wallet",
     description:
-      "Drop some USDC into your account. It takes precisely as long as the blockchain does.",
+      "Drop some USDC into your account to fund your trading balance. Fast, secure, and ready to go.",
   },
   {
     number: "03",
