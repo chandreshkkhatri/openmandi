@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { depositClaims, transactions, wallets } from "@/lib/db/schema";
 import { verifyErc20Deposit } from "@/lib/services/onchain";
+import { getWeeklyDepositTotal } from "@/lib/db/queries/wallet";
 
 const CURRENCY_CONFIG = {
   USDC: {
@@ -154,6 +155,54 @@ export async function GET(request: NextRequest) {
         }
 
         const creditAmount = verification.amountFormatted;
+        const currentBalance = parseFloat(wallet.balance ?? "0");
+        const depositAmountNum = parseFloat(creditAmount);
+
+        // Limit Rule 1: Max transaction amount is $20
+        if (depositAmountNum > 20) {
+          await tx
+            .update(depositClaims)
+            .set({
+              status: "rejected",
+              confirmations: verification.confirmations,
+              rejectionReason: "Deposit exceeds maximum allowed amount of $20.00",
+              updatedAt: new Date(),
+            })
+            .where(eq(depositClaims.id, lockedClaim.id));
+          rejectedCount++;
+          return;
+        }
+
+        // Limit Rule 2: Balance must be below $5 before crediting
+        if (currentBalance >= 5) {
+          await tx
+            .update(depositClaims)
+            .set({
+              status: "rejected",
+              confirmations: verification.confirmations,
+              rejectionReason: "User balance is already $5.00 or higher",
+              updatedAt: new Date(),
+            })
+            .where(eq(depositClaims.id, lockedClaim.id));
+          rejectedCount++;
+          return;
+        }
+
+        // Limit Rule 3: Weekly deposit limit of $100
+        const weeklyDepositTotal = await getWeeklyDepositTotal(lockedClaim.userId, tx);
+        if (weeklyDepositTotal + depositAmountNum > 100) {
+          await tx
+            .update(depositClaims)
+            .set({
+              status: "rejected",
+              confirmations: verification.confirmations,
+              rejectionReason: "Deposit would exceed weekly limit of $100.00",
+              updatedAt: new Date(),
+            })
+            .where(eq(depositClaims.id, lockedClaim.id));
+          rejectedCount++;
+          return;
+        }
 
         const [updatedWallet] = await tx
           .update(wallets)

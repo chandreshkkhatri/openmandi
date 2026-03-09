@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth/session";
-import { getUserWallets, getTotalBalance } from "@/lib/db/queries/wallet";
+import { getUserWallets, getTotalBalance, getWeeklyDepositTotal } from "@/lib/db/queries/wallet";
 import DepositForm from "@/app/components/DepositForm";
 
 export default async function Deposit() {
@@ -8,8 +8,11 @@ export default async function Deposit() {
 
   const { usdc } = await getUserWallets(user.id);
   const totalBalance = getTotalBalance(usdc?.balance ?? null);
+  const weeklyDepositTotal = await getWeeklyDepositTotal(user.id);
 
-  const eligible = totalBalance < 5;
+  const balanceEligible = totalBalance < 5;
+  const weeklyEligible = weeklyDepositTotal < 100;
+  const eligible = balanceEligible && weeklyEligible;
 
   return (
     <div className="mx-auto max-w-lg">
@@ -36,6 +39,12 @@ export default async function Deposit() {
               ${totalBalance.toFixed(2)}
             </dd>
           </div>
+          <div className="flex justify-between border-t border-border pt-2 mt-4">
+            <dt className="text-sm text-zinc-400">Weekly Deposits</dt>
+            <dd className="font-mono text-sm text-white">
+              ${weeklyDepositTotal.toFixed(2)} / $100.00
+            </dd>
+          </div>
         </dl>
       </div>
 
@@ -45,11 +54,19 @@ export default async function Deposit() {
           <h3 className="mb-2 text-sm font-semibold text-yellow-400">
             Deposits Unavailable
           </h3>
-          <p className="text-sm text-zinc-400">
-            Your total balance is ${totalBalance.toFixed(2)}. Deposits are only
-            available when your combined balance is below $5.00. Trade or
-            withdraw funds to become eligible again.
-          </p>
+          {!balanceEligible && (
+            <p className="text-sm text-zinc-400 mb-2">
+              Your total balance is ${totalBalance.toFixed(2)}. Deposits are only
+              available when your combined balance is below $5.00. Trade or
+              withdraw funds to become eligible again.
+            </p>
+          )}
+          {!weeklyEligible && (
+            <p className="text-sm text-zinc-400">
+              You have reached your weekly deposit limit of $100.00. Please wait
+              until your rolling 7-day limit resets to make more deposits.
+            </p>
+          )}
         </div>
       ) : (
         <DepositForm />

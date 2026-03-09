@@ -156,7 +156,7 @@ export default function DepositForm() {
       )}
 
       <p className="mt-4 text-xs text-zinc-500">
-        Deposits are credited only after on-chain confirmation and claim verification.
+        Maximum $20.00 per individual deposit. Maximum $100.00 total deposits per rolling 7-day period. Deposits are credited only after on-chain confirmation and claim verification.
       </p>
     </div>
   );

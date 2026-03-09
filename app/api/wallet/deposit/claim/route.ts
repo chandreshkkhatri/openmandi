@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { depositClaims } from "@/lib/db/schema";
+import { getUserWallets, getTotalBalance, getWeeklyDepositTotal } from "@/lib/db/queries/wallet";
 
 const claimSchema = z.object({
   currency: z.literal("USDC"),
@@ -33,6 +34,23 @@ export async function POST(request: NextRequest) {
           error: "Your deposit address has not been assigned yet. Please log out and log back in.",
         },
         { status: 503 }
+      );
+    }
+
+    const { usdc } = await getUserWallets(user.id);
+    const totalBalance = getTotalBalance(usdc?.balance ?? null);
+    if (totalBalance >= 5) {
+      return NextResponse.json(
+        { success: false, error: "Total balance must be below $5.00 to submit a deposit claim." },
+        { status: 403 }
+      );
+    }
+
+    const weeklyDepositTotal = await getWeeklyDepositTotal(user.id);
+    if (weeklyDepositTotal >= 100) {
+      return NextResponse.json(
+        { success: false, error: "Weekly deposit limit of $100.00 reached." },
+        { status: 403 }
       );
     }
 

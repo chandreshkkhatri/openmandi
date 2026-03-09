@@ -65,3 +65,22 @@ export async function getPendingWithdrawalTotal(userId: string) {
     count: result.count,
   };
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getWeeklyDepositTotal(userId: string, txOrDb?: { select: (...args: any[]) => any }): Promise<number> {
+  const conn = txOrDb ?? db;
+  const [result] = await conn
+    .select({
+      total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.type, "deposit"),
+        sql`${transactions.createdAt} >= NOW() - INTERVAL '7 days'`
+      )
+    );
+  
+  return parseFloat(result.total);
+}

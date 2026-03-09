@@ -26,11 +26,11 @@ export default function DepositsWithdrawals() {
       </p>
 
       <h2>Deposit Rules</h2>
-      <p>When depositing funds, two rules apply:</p>
+      <p>When depositing funds, three rules apply:</p>
 
-      <h3>1. Maximum $5 Per Deposit</h3>
+      <h3>1. Maximum $20 Per Deposit</h3>
       <p>
-        Each individual deposit can be a maximum of <strong>$5</strong> in value.
+        Each individual deposit can be a maximum of <strong>$20</strong> in value.
         You cannot deposit more than this in a single transaction.
       </p>
 
@@ -39,6 +39,13 @@ export default function DepositsWithdrawals() {
         You can only make a deposit when your total account balance is
         <strong> less than $5</strong>. If your balance is $5 or more, the
         deposit button will be disabled.
+      </p>
+
+      <h3>3. $100 Weekly Limit</h3>
+      <p>
+        You can deposit a maximum of <strong>$100</strong> in total over any
+        rolling 7-day period. If you reach this limit, you must wait until
+        older deposits fall outside the 7-day window.
       </p>
 
       <h3>Why These Limits?</h3>
@@ -73,7 +80,7 @@ export default function DepositsWithdrawals() {
       <h3>Why This Threshold?</h3>
       <p>
         The $10 withdrawal minimum encourages meaningful engagement with the
-        platform. Since you can only deposit up to $5 at a time, reaching $10
+        platform. Since deposits are capped at $20 per transaction, reaching $10
         requires you to either make profitable trades or accumulate funds over
         multiple deposit cycles. This ensures you&apos;re actually learning and
         participating, not just passing money through.
@@ -83,7 +90,7 @@ export default function DepositsWithdrawals() {
       <p>Here&apos;s a typical flow:</p>
       <ol>
         <li>
-          You start with a $0 balance and deposit $5 in USDC
+          You start with a $0 balance and deposit up to $20 in USDC
         </li>
         <li>
           You trade gold and silver futures and explore the platform
@@ -93,6 +100,9 @@ export default function DepositsWithdrawals() {
         </li>
         <li>
           When your balance reaches $10 or more, you can withdraw funds
+        </li>
+        <li>
+          Your total deposits are capped at $100 per rolling 7-day period
         </li>
       </ol>
 
@@ -113,6 +123,12 @@ export default function DepositsWithdrawals() {
       <p>
         If your balance is $5.00 or more, you cannot deposit. Your balance must
         be strictly below $5.00.
+      </p>
+
+      <h3>What is the weekly deposit limit?</h3>
+      <p>
+        You can deposit a maximum of $100.00 in total over any rolling 7-day
+        period. The deposit page shows your current weekly usage.      
       </p>
 
       <h3>Can I withdraw part of my balance?</h3>
